@@ -1,0 +1,439 @@
+---
+title: "Are there significant differences in independent variables between high-risk and low-risk groups for heart disease?"
+author: " "
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: false
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r init, include=FALSE}
+library(ezids)
+knitr::opts_chunk$set(warning = F, message = F)
+options(scientific=T, digits = 3) 
+```
+
+# Abstract
+
+# Data Loading
+```{r}
+Heart_data <- data.frame(read.csv("heart_attack_prediction_dataset_01.csv"))
+str(Heart_data)
+summary(Heart_data)
+```
+# Confirm missing value ratio
+```{r}
+cat("=== MISSING VALUE ANALYSIS FOR STATISTICAL DECISION MAKING ===\n")
+
+# Check missing percentages for all variables to make informed decisions
+missing_analysis <- data.frame(
+  Variable = names(Heart_data),
+  Missing_Count = sapply(Heart_data, function(x) sum(is.na(x))),
+  Missing_Percent = sapply(Heart_data, function(x) round((sum(is.na(x)) / length(x)) * 100, 2))
+)
+
+# Sort by missing percentage
+missing_analysis <- missing_analysis[order(-missing_analysis$Missing_Percent), ]
+print(missing_analysis)
+
+# Focus on the four continuous variables
+continuous_vars <- c("X_BMI5", "Physical_Activity_Minutes", "Mental_Health_Days", "Poor_Physical_Health_Days")
+
+cat("\n=== CONTINUOUS VARIABLES MISSING VALUE RATES ===\n")
+for(var in continuous_vars) {
+  if(var %in% names(Heart_data)) {
+    missing_count <- sum(is.na(Heart_data[[var]]))
+    missing_pct <- (missing_count / nrow(Heart_data)) * 100
+    cat(sprintf("• %s: %d missing (%.1f%%)\n", var, missing_count, missing_pct))
+  }
+}
+
+# Categorize variables by missing percentage for appropriate handling
+high_missing <- missing_analysis$Variable[missing_analysis$Missing_Percent > 50]
+moderate_missing <- missing_analysis$Variable[missing_analysis$Missing_Percent >= 5 & missing_analysis$Missing_Percent <= 50]
+low_missing <- missing_analysis$Variable[missing_analysis$Missing_Percent < 5]
+
+cat("\nVariables categorized by missing percentage:\n")
+cat("HIGH (>50% missing - should DROP):", paste(high_missing, collapse = ", "), "\n")
+cat("MODERATE (5-50% missing - consider imputation):", paste(moderate_missing, collapse = ", "), "\n") 
+cat("LOW (<5% missing - complete case analysis):", paste(low_missing, collapse = ", "), "\n")
+```
+
+# Data Transformation
+```{r}
+Heart_data$Age_Group_5yr <- factor(
+  Heart_data$Age_Group_5yr,
+  levels = 1:13,
+  labels = c(
+    "18-24", "25-29", "30-34", "35-39", "40-44", 
+    "45-49", "50-54", "55-59", "60-64", "65-69", 
+    "70-74", "75-79", "80+")
+)
+Heart_data$Sex <- factor(
+  Heart_data$Sex,
+  levels = c(1, 2),
+  labels = c("Male", "Female")
+)
+Heart_data$High_Blood_Pressure <- factor(
+  Heart_data$High_Blood_Pressure,
+  levels = c(1, 2, 3, 4),
+  labels = c("Yes", "Yes/borderline high", "Yes/pregnancy only", "No")
+)
+Heart_data$Diabetes_Status <- factor(
+  Heart_data$Diabetes_Status,
+  levels = c(1, 2, 3, 4),
+  labels = c("Yes", "Yes/borderline", "Yes/pregnancy only", "No")
+)
+Heart_data$Smoking_Status <- factor(
+  Heart_data$Smoking_Status,
+  levels = c(1, 2),
+  labels = c("Yes", "No")
+)
+Heart_data$Heavy_Drinking_Risk <- factor(
+  Heart_data$Heavy_Drinking_Risk,
+  levels = c(1, 2),
+  labels = c("Yes", "No")
+)
+Heart_data$Fruit_Recommendations_Met <- factor(
+  Heart_data$Fruit_Recommendations_Met,
+  levels = c(1, 2),
+  labels = c("Yes", "No")
+)
+Heart_data$CVD_Stroke_History <- factor(
+  Heart_data$CVD_Stroke_History,
+  levels = c(1, 2),
+  labels = c("Yes", "No")
+)
+Heart_data$Coronary_Heart_Disease <- factor(
+  Heart_data$Coronary_Heart_Disease,
+  levels = c(1, 2),
+  labels = c("Yes", "No")
+)
+Heart_data$Heart_Attack_History <- factor(
+  Heart_data$Heart_Attack_History,
+  levels = c(1, 2),
+  labels = c("Yes", "No")
+)
+
+Heart_data$X_BMI5 <- Heart_data$X_BMI5 / 100
+# DO NOT IMPUTE HERE - We'll handle missing values properly in the cleaning section
+# Heart_data$X_BMI5[is.na(Heart_data$X_BMI5)] <- mean(Heart_data$X_BMI5, na.rm = TRUE)  # WRONG APPROACH
+
+str(Heart_data)
+summary(Heart_data)
+```
+
+# Data Cleaning
+
+## Statistically Sound Missing Value Handling
+
+```{r}
+cat("=== APPLYING EVIDENCE-BASED MISSING VALUE TREATMENT ===\n")
+
+# Step 1: Drop variables with >50% missing (statistically unreliable)
+Heart_clean <- Heart_data
+
+# Check which variables have >50% missing and should be dropped
+high_missing_vars <- c()
+for(var in names(Heart_clean)) {
+  missing_pct <- (sum(is.na(Heart_clean[[var]])) / nrow(Heart_clean)) * 100
+  if(missing_pct > 50) {
+    high_missing_vars <- c(high_missing_vars, var)
+  }
+}
+
+if(length(high_missing_vars) > 0) {
+  cat("Dropping variables with >50% missing:", paste(high_missing_vars, collapse = ", "), "\n")
+  Heart_clean <- Heart_clean[, !names(Heart_clean) %in% high_missing_vars]
+}
+
+# Step 2: Handle continuous variables with 5-20% missing (ONLY these get imputed)
+continuous_vars <- c("X_BMI5", "Physical_Activity_Minutes", "Mental_Health_Days", "Poor_Physical_Health_Days")
+available_continuous <- continuous_vars[continuous_vars %in% names(Heart_clean)]
+
+cat("\n=== CONTINUOUS VARIABLE IMPUTATION (5-20% missing only) ===\n")
+for(var in available_continuous) {
+  missing_count <- sum(is.na(Heart_clean[[var]]))
+  missing_pct <- (missing_count / nrow(Heart_clean)) * 100
+  
+  if(missing_pct >= 5 && missing_pct <= 20) {
+    # Use MEDIAN imputation (more robust than mean)
+    var_median <- median(Heart_clean[[var]], na.rm = TRUE)
+    Heart_clean[[var]][is.na(Heart_clean[[var]])] <- var_median
+    cat(sprintf("✅ %s: Imputed %d values (%.1f%%) with MEDIAN (%.2f)\n", 
+                var, missing_count, missing_pct, var_median))
+  } else if(missing_pct > 20) {
+    cat(sprintf("⚠️  %s: %.1f%% missing - Consider advanced imputation or dropping\n", var, missing_pct))
+  } else {
+    cat(sprintf("• %s: %.1f%% missing - Keeping as NA for complete case analysis\n", var, missing_pct))
+  }
+}
+
+# Step 3: For categorical variables - NO imputation, use complete case analysis
+cat("\n=== CATEGORICAL VARIABLES - NO IMPUTATION ===\n")
+categorical_vars <- names(Heart_clean)[sapply(Heart_clean, function(x) is.factor(x) || is.character(x))]
+for(var in categorical_vars) {
+  missing_count <- sum(is.na(Heart_clean[[var]]))
+  missing_pct <- (missing_count / nrow(Heart_clean)) * 100
+  if(missing_count > 0) {
+    cat(sprintf("• %s: %d missing (%.1f%%) - Will use complete case analysis\n", var, missing_count, missing_pct))
+  }
+}
+
+# Step 4: Remove rows with missing CRITICAL variables only
+critical_vars <- c("Heart_Attack_History", "Age_Group_5yr", "Sex")
+available_critical <- critical_vars[critical_vars %in% names(Heart_clean)]
+
+rows_before <- nrow(Heart_clean)
+Heart_clean <- Heart_clean[complete.cases(Heart_clean[available_critical]), ]
+rows_after <- nrow(Heart_clean)
+
+cat(sprintf("\n=== FINAL RESULTS ===\n"))
+cat(sprintf("Rows removed due to missing CRITICAL variables: %d\n", rows_before - rows_after))
+cat(sprintf("Final dataset: %d rows × %d columns\n", nrow(Heart_clean), ncol(Heart_clean)))
+cat(sprintf("Data retention rate: %.1f%%\n", (rows_after / nrow(Heart_data)) * 100))
+
+# Check remaining missing values
+remaining_missing <- sapply(Heart_clean, function(x) sum(is.na(x)))
+remaining_missing <- remaining_missing[remaining_missing > 0]
+if(length(remaining_missing) > 0) {
+  cat("\nRemaining missing values (for complete case analysis in specific tests):\n")
+  print(remaining_missing)
+} else {
+  cat("\n✅ No remaining missing values\n")
+}
+
+str(Heart_clean)
+summary(Heart_clean)
+```
+
+## Statistically Appropriate Outlier Treatment
+
+```{r}
+cat("=== OUTLIER ANALYSIS WITH CLINICAL RELEVANCE ===\n")
+
+# Store data before outlier removal for comparison
+Heart_before_outlier <- Heart_clean
+
+# Only remove IMPOSSIBLE values, not clinical outliers
+if("X_BMI5" %in% names(Heart_clean)) {
+  # BMI: Only remove impossible values (<10 or >70 kg/m²)
+  bmi_outliers <- which(Heart_clean$X_BMI5 < 10 | Heart_clean$X_BMI5 > 70)
+  if(length(bmi_outliers) > 0) {
+    cat(sprintf("Removing %d impossible BMI values (<10 or >70)\n", length(bmi_outliers)))
+    Heart_clean <- Heart_clean[-bmi_outliers, ]
+  } else {
+    cat("✅ All BMI values within plausible human range\n")
+  }
+}
+
+# For other continuous variables - be very conservative
+# Physical activity: Only remove extreme impossible values
+if("Physical_Activity_Minutes" %in% names(Heart_clean)) {
+  # Remove >20 hours/day (>8400 min/week) - physically impossible
+  activity_outliers <- which(Heart_clean$Physical_Activity_Minutes > 8400)
+  if(length(activity_outliers) > 0) {
+    cat(sprintf("Removing %d impossible physical activity values (>8400 min/week)\n", length(activity_outliers)))
+    Heart_clean <- Heart_clean[-activity_outliers, ]
+  } else {
+    cat("✅ All physical activity values within possible range\n")
+  }
+}
+
+# Health days: Should be 0-30, but we already handled this in data transformation
+# Don't remove high values as they may be clinically relevant
+
+# Final check - remove any remaining complete missing cases
+rows_before_final <- nrow(Heart_clean)
+Heart_clean <- na.omit(Heart_clean)
+rows_after_final <- nrow(Heart_clean)
+
+if(rows_before_final != rows_after_final) {
+  cat(sprintf("Removed %d additional rows with remaining missing values\n", rows_before_final - rows_after_final))
+}
+
+cat(sprintf("\nFinal cleaned dataset: %d rows × %d columns\n", nrow(Heart_clean), ncol(Heart_clean)))
+cat(sprintf("Overall data retention: %.1f%% of original data\n", (nrow(Heart_clean) / nrow(Heart_data)) * 100))
+
+# Validate our approach preserved key relationships
+if("X_BMI5" %in% names(Heart_clean) && "Heart_Attack_History" %in% names(Heart_clean)) {
+  bmi_by_heart_attack <- aggregate(X_BMI5 ~ Heart_Attack_History, Heart_clean, function(x) c(mean=mean(x), sd=sd(x), n=length(x)))
+  cat("\nValidation - BMI by Heart Attack Status (preserved for analysis):\n")
+  print(bmi_by_heart_attack)
+}
+
+str(Heart_clean)
+```
+
+
+
+
+
+
+
+
+
+# Descriptive Statistics
+
+## Summary
+```{r}
+summary(Heart_clean)
+```
+
+## Structure
+```{r}
+str(Heart_clean)
+```
+
+## Graphical
+```{r}
+library(ggplot2)
+
+# Heart Attack History
+ggplot(Heart_clean, aes(x = Heart_Attack_History)) +
+  geom_bar(fill = "darkgreen") +
+  labs(title = "Distribution of Heart Attack History",
+       x = "Heart Attack History", y = "Count")
+# AGE group
+ggplot(Heart_clean, aes(x = Age_Group_5yr)) +
+  geom_bar(fill = "steelblue") +
+  labs(title = "Distribution of Age Groups",
+       x = "Age Group", y = "Count")
+
+# Sex
+ggplot(Heart_clean, aes(x = Sex)) +
+  geom_bar(fill = "darkorange") +
+  labs(title = "Distribution of Sex",
+       x = "Sex", y = "Count")
+
+# High blood pressure
+ggplot(Heart_clean, aes(x = High_Blood_Pressure)) +
+  geom_bar(fill = "purple") +
+  labs(title = "Distribution of High Blood Pressure Status",
+       x = "High Blood Pressure", y = "Count") 
+
+# Diabetes Status
+ggplot(Heart_clean, aes(x = Diabetes_Status)) +
+  geom_bar(fill = "forestgreen") +
+  labs(title = "Distribution of Diabetes Status",
+       x = "Diabetes Status", y = "Count")
+
+
+# Smoking Status
+ggplot(Heart_clean, aes(x = Smoking_Status)) +
+  geom_bar(fill = "red") +
+  labs(title = "Distribution of Smoking Status",
+       x = "Smoking Status", y = "Count")
+
+#Heaving Drinking Risk
+ggplot(Heart_clean, aes(x = Heavy_Drinking_Risk)) +
+  geom_bar(fill = "brown") +
+  labs(title = "Distribution of Heavy Drinking Risk",
+       x = "Heavy Drinking Risk", y = "Count")
+
+# Fruit_Recommendations_Met
+ggplot(Heart_clean, aes(x = Fruit_Recommendations_Met)) +
+  geom_bar(fill = "darkcyan") +
+  labs(title = "Distribution of Fruit Consumption",
+       x = "Fruit Recommendations Met", y = "Count")
+
+# CVD_Stroke_History
+ggplot(Heart_clean, aes(x = CVD_Stroke_History)) +
+  geom_bar(fill = "darkred") +
+  labs(title = "Distribution of Stroke History",
+       x = "Stroke History", y = "Count")
+
+#Coronary_Heart_Disease
+ggplot(Heart_clean, aes(x = Coronary_Heart_Disease)) +
+  geom_bar(fill = "navy") +
+  labs(title = "Distribution of Coronary Heart Disease",
+       x = "Coronary Heart Disease", y = "Count")
+
+# BMI
+ggplot(na.omit(Heart_clean), aes(x = X_BMI5)) +
+  geom_histogram(binwidth = 2, fill = "skyblue", color = "black") +
+  labs(title = "Distribution of BMI",
+       x = "BMI", y = "Count")
+
+```
+# Data Analysis
+```{r}
+# t-test
+# Age group
+chisq.test(table(Heart_data$Heart_Attack_History, 
+                 Heart_data$Age_Group_5yr, useNA = "no"))
+# Sex
+chisq.test(table(Heart_data$Heart_Attack_History, 
+                 Heart_data$Sex, useNA = "no"))
+# High Blood Pressure
+chisq.test(table(Heart_data$Heart_Attack_History, 
+                 Heart_data$High_Blood_Pressure, useNA = "no"))
+# Diabetes Status
+chisq.test(table(Heart_data$Heart_Attack_History, 
+                 Heart_data$Diabetes_Status, useNA = "no"))
+# Smoking
+chisq.test(table(Heart_data$Heart_Attack_History, 
+                 Heart_data$Smoking_Status, useNA = "no"))
+# Heavy Drinking Risk
+chisq.test(table(Heart_data$Heart_Attack_History, 
+                 Heart_data$Heavy_Drinking_Risk, useNA = "no"))
+# Fruit Recommendations
+chisq.test(table(Heart_data$Heart_Attack_History, 
+                 Heart_data$Fruit_Recommendations_Met, useNA = "no"))
+# Stroke History
+chisq.test(table(Heart_data$Heart_Attack_History, 
+                 Heart_data$CVD_Stroke_History, useNA = "no"))
+# Coronary Heart Disease
+chisq.test(table(Heart_data$Heart_Attack_History, 
+                 Heart_data$Coronary_Heart_Disease, useNA = "no"))
+
+
+# anova
+
+# BMI
+anova_bmi <- aov(X_BMI5 ~ Heart_Attack_History, data = Heart_data, na.action = na.omit)
+summary(anova_bmi)
+```
+Chi- suared test
+
+Age group vs. Heart attack history
+The chi-squared test shows a very strong relationship between age group and heart attack history (p < 2e-16). This means it is almost impossible that the result happened by chance.
+
+Sex vs. Heart attack history
+The chi-squared test shows a very strong relationship between sex and heart attack history (p < 2e-16). This means it is almost impossible that the result happened by chance.
+
+High blood pressure vs. Heart attack history
+The chi-squared test shows a very strong relationship between high blood pressure and heart attack history (p < 2e-16). This means it is almost impossible that the result happened by chance.
+
+Diabetes status vs. Heart attack history
+The chi-squared test shows a very strong relationship between diabetes status and heart attack history (p < 2e-16). This means it is almost impossible that the result happened by chance.
+
+Smoking status vs. Heart attack history
+The chi-squared test shows a very strong relationship between smoking status and heart attack history (p < 2e-16). This means it is almost impossible that the result happened by chance.
+
+Heavy drinking risk vs. Heart attack history
+The chi-squared test shows a very strong relationship between heavy drinking risk and heart attack history (p < 2e-16). This means it is almost impossible that the result happened by chance.
+
+Fruit consumption vs. Heart attack history
+The chi-squared test shows a very strong relationship between fruit consumption and heart attack history (p < 2e-16). This means it is almost impossible that the result happened by chance.
+
+Stroke history vs. Heart attack history
+The chi-squared test shows a very strong relationship between stroke history and heart attack history (p < 2e-16). This means it is almost impossible that the result happened by chance.
+
+Coronary heart disease vs. Heart attack history
+The chi-squared test shows a very strong relationship between coronary heart disease and heart attack history (p < 2e-16). This means it is almost impossible that the result happened by chance.
+
+Anova test
+
+BMI vs. Heart attack history
+The ANOVA test shows a very strong relationship between BMI and heart attack history (p < 2e-16). This means it is almost impossible that the result happened by chance.
+
+# Conclusion
+

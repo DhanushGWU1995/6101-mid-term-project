@@ -1,0 +1,146 @@
+---
+title: "Are there significant differences in independent variables between high-risk and low-risk groups for heart disease?"
+author: " "
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: false
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r init, include=FALSE}
+library(ezids)
+knitr::opts_chunk$set(warning = F, message = F)
+options(scientific=T, digits = 3) 
+```
+
+# Abstract
+
+# Data Loading
+```{r}
+Heart_data <- data.frame(read.csv("heart_attack_prediction_dataset.csv"))
+str(Heart_data)
+summary(Heart_data)
+```
+# Confirm missing value ratio
+```{r}
+sum(is.na(Heart_data$X_BMI5)) / length(Heart_data$X_BMI5)
+sum(is.na(Heart_data$Physical_Activity_Minutes)) / length(Heart_data$Physical_Activity_Minutes)
+sum(is.na(Heart_data$Mental_Health_Days)) / length(Heart_data$Mental_Health_Days)
+sum(is.na(Heart_data$Poor_Physical_Health_Days)) / length(Heart_data$Poor_Physical_Health_Days)
+```
+
+# Data Transformation
+```{r}
+Heart_data$Age_Group_5yr <- factor(
+  Heart_data$Age_Group_5yr,
+  levels = 1:13,
+  labels = c(
+    "18-24", "25-29", "30-34", "35-39", "40-44", 
+    "45-49", "50-54", "55-59", "60-64", "65-69", 
+    "70-74", "75-79", "80+")
+)
+Heart_data$Sex <- factor(
+  Heart_data$Sex,
+  levels = c(1, 2),
+  labels = c("Male", "Female")
+)
+Heart_data$High_Blood_Pressure <- factor(
+  Heart_data$High_Blood_Pressure,
+  levels = c(1, 2, 3, 4),
+  labels = c("Yes", "Yes/borderline high", "Yes/pregnancy only", "No")
+)
+Heart_data$Diabetes_Status <- factor(
+  Heart_data$Diabetes_Status,
+  levels = c(1, 2, 3, 4),
+  labels = c("Yes", "Yes/borderline", "Yes/pregnancy only", "No")
+)
+Heart_data$Smoking_Status <- factor(
+  Heart_data$Smoking_Status,
+  levels = c(1, 2),
+  labels = c("Yes", "No")
+)
+Heart_data$Heavy_Drinking_Risk <- factor(
+  Heart_data$Heavy_Drinking_Risk,
+  levels = c(1, 2),
+  labels = c("Yes", "No")
+)
+Heart_data$Fruit_Recommendations_Met <- factor(
+  Heart_data$Fruit_Recommendations_Met,
+  levels = c(1, 2),
+  labels = c("Yes", "No")
+)
+Heart_data$CVD_Stroke_History <- factor(
+  Heart_data$CVD_Stroke_History,
+  levels = c(1, 2),
+  labels = c("Yes", "No")
+)
+Heart_data$Coronary_Heart_Disease <- factor(
+  Heart_data$Coronary_Heart_Disease,
+  levels = c(1, 2),
+  labels = c("Yes", "No")
+)
+Heart_data$Heart_Attack_History <- factor(
+  Heart_data$Heart_Attack_History,
+  levels = c(1, 2),
+  labels = c("Yes", "No")
+)
+
+Heart_data$X_BMI5 <- Heart_data$X_BMI5 / 100
+Heart_data$X_BMI5[is.na(Heart_data$X_BMI5)] <- mean(Heart_data$X_BMI5, na.rm = TRUE)
+
+str(Heart_data)
+summary(Heart_data)
+```
+
+# Data Cleaning
+
+## Missing value handling
+
+```{r}
+Heart_clean <- na.omit(Heart_data)
+str(Heart_clean)
+summary(Heart_clean)
+```
+
+## Remove outlier
+
+```{r}
+Heart_clean <- outlierKD2(Heart_clean, X_BMI5, rm = TRUE)
+Heart_clean <- na.omit(Heart_clean)
+str(Heart_clean)
+
+```
+
+
+
+
+
+
+
+
+
+# Descriptive Statistics
+
+## Summary
+```{r}
+summary(Heart_clean)
+```
+
+## Structure
+```{r}
+str(Heart_clean)
+```
+
+## Graphical
+
+# Data Analysis
+
+# Conclusion
+
