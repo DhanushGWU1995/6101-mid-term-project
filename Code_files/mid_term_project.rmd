@@ -110,6 +110,13 @@ Heart_data$Smoking_Status <- factor(
   labels = c("Yes", "No")
 )
 
+# BMI_Category_Alt 
+Heart_data$BMI_Category_Alt  <- factor(
+  Heart_data$BMI_Category_Alt ,
+  levels = c(1, 2, 3, 4),
+  labels = c("Underweight", "Normal Weight", "Overweight", "Obese")
+)
+
 # Exercise variables
 Heart_data$Exercise_Past_30_Days <- factor(
   Heart_data$Exercise_Past_30_Days,
@@ -325,3 +332,99 @@ str(Heart_clean)
 ```
 
 ## Data Visualizations
+```{r}
+library(ggplot2)
+
+#Coronary_Heart_Disease
+ggplot(Heart_clean, aes(x = Coronary_Heart_Disease)) +
+  geom_bar(fill = "navy") +
+  labs(title = "Distribution of Coronary Heart Disease",
+       x = "Coronary Heart Disease", y = "Count")
+
+# Diabetes Status
+ggplot(Heart_clean, aes(x = Diabetes_Status)) +
+  geom_bar(fill = "forestgreen") +
+  labs(title = "Distribution of Diabetes Status",
+       x = "Diabetes Status", y = "Count")
+
+
+# Smoking Status
+ggplot(Heart_clean, aes(x = Smoking_Status)) +
+  geom_bar(fill = "red") +
+  labs(title = "Distribution of Smoking Status",
+       x = "Smoking Status", y = "Count")
+
+#General_Health_Status
+ggplot(Heart_clean, aes(x = General_Health_Status)) +
+  geom_bar(fill = "blue") +
+  labs(title = "Distribution of General Health Status",
+       x = "General Health Status", y = "Count")
+
+#Exercise_Past_30_Days 
+ggplot(Heart_clean, aes(x = Exercise_Past_30_Days)) +
+  geom_bar(fill = "purple") +
+  labs(title = "Distribution Exercise Past 30 Days",
+       x = "Exercise Past 30 Days", y = "Count")
+
+#BMI_Category
+ggplot(Heart_clean, aes(x = BMI_Category_Alt)) +
+  geom_bar(fill = "orange") +
+  labs(title = "Distribution BMI_Category",
+       x = "BMI Category", y = "Count")
+
+# BMI_Value
+ggplot(na.omit(Heart_clean), aes(x = BMI_Value)) +
+  geom_histogram(binwidth = 2, fill = "skyblue", color = "black") +
+  labs(title = "Distribution of BMI",
+       x = "BMI_Value", y = "Count")
+```
+
+From the chart of Coronary Heart Disease, we can see that most of the samples do not have this condition.
+
+From the chart of Diabetes Status, we can see that most of the samples have some form of diabetes, especially those related to pregnancy.
+
+From the chart of Smoking Status, we can see that the number of non-smokers is slightly higher than that of smokers.
+
+From the chart of General Health Status, we can see that most of the samples are in good health, while the proportion of those with poor health is the smallest.
+
+From the chart of Exercise in the Past 30 Days, we can see that most of the samples have exercised within the past 30 days.
+
+From the chart of BMI Category (Alt), we can see that most of the samples fall within the normal and obese BMI ranges.
+
+From the chart of BMI Value, we can see that the distribution is right-skewed, with most of the data concentrated in the 20–40 range.
+
+
+# Data Analysis
+```{r}
+# Q1:Is there a significant difference in BMI between people with and without coronary heart disease? (T-test)
+t_test_BMI_coronary <- t.test(BMI_Value ~ Coronary_Heart_Disease, data = Heart_data)
+t_test_BMI_coronary
+
+# Q2: Is smoking status associated with coronary heart disease? (Chi-square test)
+chisq.test(table(Heart_data$Smoking_Status,
+                 Heart_data$Coronary_Heart_Disease, useNA = "no"))
+
+# Q3: Does BMI vary significantly across different general health status levels? (ANOVA)
+anova_result <- aov(BMI_Value ~ General_Health_Status, data = Heart_data)
+summary(anova_result)
+
+# Q4: Does exercise participation vary significantly across different BMI categories, suggesting a role in weight management? (Chi-square test)
+chisq.test(table(Heart_data$Exercise_Past_30_Days,
+                 Heart_data$BMI_Category_Alt, useNA = "no"))
+
+# Q5: Is diabetes status associated with coronary heart disease? (Chi-square test)
+chisq.test(table(Heart_data$Diabetes_Status, 
+                 Heart_data$Coronary_Heart_Disease,useNA = "no"))
+
+```
+For Q1, the t-test shows a very strong difference in BMI between people with and without coronary heart disease (p < 2e-16). This means it is almost impossible that the result happened by chance, suggesting that individuals with coronary heart disease tend to have higher BMI on average.
+
+For Q2, the chi-squared test shows a very strong relationship between smoking status and coronary heart disease (p < 2e-16). This means it is almost impossible that the result happened by chance, suggesting that smokers are much more likely to have coronary heart disease than non-smokers.
+
+For Q3, the ANOVA test shows a very strong difference in BMI across different general health status levels (p < 2e-16). This means it is almost impossible that the result happened by chance, suggesting that BMI varies significantly depending on an individual’s reported health condition.
+
+For Q4, the chi-squared test shows a very strong relationship between past-30-day exercise participation and BMI category (p < 2e-16). This means it is almost impossible that the result happened by chance. People who reported exercising in the past 30 days tend to fall into lower BMI categories, while those who did not exercise are more likely to be in higher BMI groups. This pattern suggests that regular physical activity plays an important role in weight management and maintaining a healthier BMI.
+
+For Q5, the chi-squared test shows a very strong relationship between diabetes status and coronary heart disease (p < 2e-16). This means it is almost impossible that the result happened by chance. People with diabetes or prediabetes have a much higher likelihood of developing coronary heart disease compared to those without diabetes, suggesting that poor blood sugar control is closely linked to increased heart disease risk.
+
+# Conclusion
