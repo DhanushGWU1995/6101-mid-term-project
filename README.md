@@ -5,3 +5,12 @@ Team Member: Dhanush, Heng Jui, Adithya, Nikhil
 # Data set information
 https://www.cdc.gov/brfss/annual_data/annual_2024.html
 
+# IDE Used: VS Code
+https://code.visualstudio.com/ 
+
+# Programming Languages used: R, Python
+
+# Raw data file format : .xpt
+# Cleaned data file format : .csv
+# EDA Output file format : HTML
+
