@@ -10,7 +10,7 @@ https://code.visualstudio.com/
 
 # Programming Languages used: R, Python
 
-# Raw data file format : .xpt
-# Cleaned data file format : .csv
+# Raw data file format : .xpt 
+# Cleaned data file format : .csv (https://github.com/DhanushGWU1995/6101-mid-term-project/blob/main/Data_cleanup_scripts/BRFSS_2024_Readable_Columns.csv)
 # EDA Output file format : HTML
 
