@@ -430,6 +430,11 @@ From the chart of BMI Value, we can see that the distribution is right-skewed, w
 
 
 # Data Analysis
+
+## Q1
+
+Is there a significant difference in BMI between people with and without coronary heart disease? (T-test)
+
 ```{r}
 # Q1:Is there a significant difference in BMI between people with and without coronary heart disease? (T-test)
 t_test_BMI_coronary <- t.test(BMI_Value ~ Coronary_Heart_Disease, data = Heart_data)
@@ -437,7 +442,7 @@ t_test_BMI_coronary
 
 ggplot(Heart_clean, aes(x = Coronary_Heart_Disease, y = BMI_Value, fill = Coronary_Heart_Disease)) +
   geom_boxplot() +
-  labs(title = "BMI by Coronary Heart Disease",
+  labs(title = "BMI vs. Coronary Heart Disease",
        x = "Coronary Heart Disease",
        y = "BMI Value") +
   theme_minimal()
@@ -446,6 +451,10 @@ ggplot(Heart_clean, aes(x = Coronary_Heart_Disease, y = BMI_Value, fill = Corona
 For Q1, the t-test shows a very strong difference in BMI between people with and without coronary heart disease (p < 2e-16). This means it is almost impossible that the result happened by chance, suggesting that individuals with coronary heart disease tend to have higher BMI on average.
 
 Although the boxplot shows similar BMI distributions between the two groups, the t-test result (p < 0.05) indicates a significant difference. This may be due to the large sample size detecting small mean differences.
+
+## Q2
+
+Is smoking status associated with coronary heart disease? (Chi-square test)
 
 ```{r}
 # Q2: Is smoking status associated with coronary heart disease? (Chi-square test)
@@ -456,7 +465,7 @@ chisq.test(table(Heart_data$Smoking_Status,
 ggplot(Heart_clean, aes(x = Smoking_Status, fill = Coronary_Heart_Disease)) +
   geom_bar(position = "fill") +
   scale_y_continuous(labels = scales::percent) +
-  labs(title = "CHD Proportion by Smoking Status",
+  labs(title = "CHD Proportion vs. Smoking Status",
        x = "Smoking Status",
        y = "Percentage",
        fill = "CHD") +
@@ -467,6 +476,10 @@ For Q2, the chi-squared test shows a very strong relationship between smoking st
 
 We can clearly see from the chart that people who smoke have a higher proportion of coronary heart disease compared to those who do not smoke.
 
+## Q3
+
+Does BMI vary significantly across different general health status levels? (ANOVA)
+
 ```{r}
 # Q3: Does BMI vary significantly across different general health status levels? (ANOVA)
 anova_result <- aov(BMI_Value ~ General_Health_Status, data = Heart_data)
@@ -474,7 +487,7 @@ summary(anova_result)
 
 ggplot(Heart_clean, aes(x = General_Health_Status, y = BMI_Value, fill = General_Health_Status)) +
   geom_boxplot() +
-  labs(title = "BMI by General Health Status",
+  labs(title = "BMI vs. General Health Status",
        x = "General Health Status",
        y = "BMI Value") +
   theme_minimal()
@@ -485,6 +498,12 @@ For Q3, the ANOVA test shows a very strong difference in BMI across different ge
 
 From the chart, we can also observe that people with poorer health tend to have higher BMI values, while those with better health tend to have lower BMI values.
 
+## Q4
+
+Does exercise participation vary significantly across different BMI categories, suggesting a role in weight management? (Chi-square test)
+
+
+
 ```{r}
 # Q4: Does exercise participation vary significantly across different BMI categories, suggesting a role in weight management? (Chi-square test)
 chisq.test(table(Heart_data$Exercise_Past_30_Days,
@@ -493,7 +512,7 @@ chisq.test(table(Heart_data$Exercise_Past_30_Days,
 ggplot(Heart_clean, aes(x = BMI_Category_Alt, fill = Exercise_Past_30_Days)) +
   geom_bar(position = "fill") +
   scale_y_continuous(labels = scales::percent) +
-  labs(title = "Exercise Participation by BMI Category",
+  labs(title = "Exercise Participation vs. BMI Category",
        x = "BMI Category",
        y = "Percentage",
        fill = "Exercised in Past 30 Days") +
@@ -504,6 +523,11 @@ For Q4, the chi-squared test shows a very strong relationship between past-30-da
 
 From the chart, we can also observe that people who are underweight or obese have a noticeably lower rate of exercise in the past 30 days compared to those with a moderate BMI.
 
+## Q5
+
+Is diabetes status associated with coronary heart disease? (Chi-square test)
+
+
 ```{r}
 # Q5: Is diabetes status associated with coronary heart disease? (Chi-square test)
 chisq.test(table(Heart_data$Diabetes_Status, 
@@ -512,7 +536,7 @@ chisq.test(table(Heart_data$Diabetes_Status,
 ggplot(Heart_clean, aes(x = Diabetes_Status, fill = Coronary_Heart_Disease)) +
   geom_bar(position = "fill") +
   scale_y_continuous(labels = scales::percent) +
-  labs(title = "Coronary Heart Disease by Diabetes Status",
+  labs(title = "Coronary Heart Disease vs. Diabetes Status",
        x = "Diabetes Status",
        y = "Percentage",
        fill = "CHD Status") +
