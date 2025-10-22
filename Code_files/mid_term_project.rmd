@@ -1,6 +1,6 @@
 ---
 title: "What factors are significantly associated with coronary heart disease diagnosis?"
-author: " "
+author: "Team Confusion Matrix Mafia : Dhanush, Heng Jui, Nikhil, Adithya"
 date: "`r Sys.Date()`"
 output:
   html_document:
