@@ -1,639 +1,420 @@
 ---
-title: "What factors are significantly associated with coronary heart disease diagnosis?"
+title: "Unveiling the factors significantly associated with coronary heart disease diagnosis?"
 author: "Team Confusion Matrix Mafia : Dhanush, Heng Jui, Nikhil, Adithya"
 date: "`r Sys.Date()`"
 output:
   html_document:
-    code_folding: hide
-    number_sections: false
-    toc: yes
+    toc: true
+    toc_float: true
     toc_depth: 3
-    toc_float: yes
-  pdf_document:
-    toc: yes
-    toc_depth: '3'
+    code_folding: hide 
+    theme: cerulean        
 ---
 
-```{r init, include=FALSE}
+```{r setup, include=FALSE}
 library(ezids)
-knitr::opts_chunk$set(warning = F, message = F)
-options(scientific=T, digits = 3) 
+library(ggplot2)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+options(scientific = TRUE, digits = 3)
 ```
 
 # Abstract
 
-This study examines key factors associated with coronary heart disease using simple statistical analysis. We investigate 5 main research questions using t-tests, chi-square tests, and ANOVA to understand the relationship between lifestyle factors, health metrics, and coronary heart disease diagnosis.
+This study investigates key lifestyle and health factors associated with coronary heart disease (CHD) using a large, population-based survey dataset. Through rigorous data cleaning, evidence-based handling of missing values, and clinically guided outlier removal, the analysis ensures robust statistical inference. Exploratory data analysis is conducted using t-tests, chi-square tests, and ANOVA to examine the roles of BMI, smoking, diabetes, exercise, and general health status. The results demonstrate strong and consistent associations, indicating that higher BMI, diabetes, and smoking are linked to an increased risk of CHD, while regular exercise and better self-reported health status are associated with a lower risk. These findings emphasize the significance of modifiable lifestyle behaviors in the prevention and management of coronary heart disease.
 
-**Research Questions:**
-1. Is there a significant difference in BMI between people with and without coronary heart disease? (T-test)
-2. Is smoking status associated with coronary heart disease? (Chi-square test)
-3. Does BMI vary significantly across different general health status levels? (ANOVA)
-4. Does exercise participation vary significantly across different BMI categories, suggesting a role in weight management? (Chi-square test)
-5. Is diabetes status associated with coronary heart disease? (Chi-square test)
+---
 
-# Data Loading
-```{r}
+# Data Loading & Preparation
+
+```{r, results='asis'}
+# Load necessary libraries
+library(kableExtra)
+library(knitr)
+
 Heart_data <- data.frame(read.csv("BRFSS_2024_Readable_Columns.csv"))
-str(Heart_data)
-summary(Heart_data)
-```
-# Confirm missing value ratio
-```{r}
-cat("=== MISSING VALUE ANALYSIS FOR STATISTICAL DECISION MAKING ===\n")
 
-# Check missing percentages for all variables to make informed decisions
+# Variable transformation
+Heart_data$Age_Group_5yr <- factor(
+  Heart_data$Age_Group_5yr, levels = 1:13,
+  labels = c("18-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80+")
+)
+Heart_data$Sex <- factor(Heart_data$Sex, levels = c(1, 2), labels = c("Male", "Female"))
+Heart_data$Diabetes_Status <- factor(Heart_data$Diabetes_Status, levels = c(1, 2, 3, 4), labels = c("Yes", "Yes/borderline", "Yes/pregnancy only", "No"))
+Heart_data$Smoking_Status <- factor(Heart_data$Smoked_100_Cigarettes_Lifetime, levels = c(1, 2), labels = c("Yes", "No"))
+Heart_data$BMI_Category_Alt <- factor(Heart_data$BMI_Category_Alt, levels = c(1, 2, 3, 4), labels = c("Underweight", "Normal Weight", "Overweight", "Obese"))
+Heart_data$Exercise_Past_30_Days <- factor(Heart_data$Exercise_Past_30_Days, levels = c(1, 2), labels = c("Yes", "No"))
+Heart_data$CVD_Stroke_History <- factor(Heart_data$CVD_Stroke_History, levels = c(1, 2), labels = c("Yes", "No"))
+Heart_data$Coronary_Heart_Disease <- factor(Heart_data$Coronary_Heart_Disease, levels = c(1, 2), labels = c("Yes", "No"))
+Heart_data$Heart_Attack_History <- factor(Heart_data$Heart_Attack_History, levels = c(1, 2), labels = c("Yes", "No"))
+Heart_data$General_Health_Status <- factor(Heart_data$General_Health_Status, levels = c(1, 2, 3, 4, 5), labels = c("Excellent", "Very Good", "Good", "Fair", "Poor"))
+Heart_data$BMI_Value <- Heart_data$BMI_Category / 100
+if("Flu_Vaccination" %in% names(Heart_data)) {
+  Heart_data$Flu_Vaccination <- factor(Heart_data$Flu_Vaccination, levels = c(1, 2), labels = c("Yes", "No"))
+}
+if("Difficulty_Walking_Stairs" %in% names(Heart_data)) {
+  Heart_data$Difficulty_Walking_Stairs <- factor(Heart_data$Difficulty_Walking_Stairs, levels = c(1, 2), labels = c("Yes", "No"))
+}
+if("Poor_Physical_Health_Days" %in% names(Heart_data)) {
+  Heart_data$Poor_Physical_Health_Days <- as.numeric(Heart_data$Poor_Physical_Health_Days)
+}
+
+names(Heart_data)[names(Heart_data) == "Age_Group_5yr"] <- "Age"
+
+# Select only the 14 key variables
+selected_vars <- c(
+  "Age", "Sex", "Diabetes_Status", "Smoking_Status", "BMI_Category_Alt",
+  "Exercise_Past_30_Days", "CVD_Stroke_History", "Coronary_Heart_Disease",
+  "Heart_Attack_History", "General_Health_Status", "BMI_Value",
+  "Flu_Vaccination", "Difficulty_Walking_Stairs", "Poor_Physical_Health_Days"
+)
+Heart_data <- Heart_data[, selected_vars]
+
+# Display first few rows of the dataset in a styled box
+kable(head(Heart_data[, 1:6]), caption = "Initial Dataset Preview with few variables", align = 'c', format = "html") %>%
+  kable_styling(bootstrap_options = c("striped", "bordered", "hover"), full_width = FALSE, position = "left")
+```
+
+---
+
+# Missing Value Analysis
+
+```{r, results='asis'}
 missing_analysis <- data.frame(
   Variable = names(Heart_data),
   Missing_Count = sapply(Heart_data, function(x) sum(is.na(x))),
   Missing_Percent = sapply(Heart_data, function(x) round((sum(is.na(x)) / length(x)) * 100, 2))
 )
-
-# Sort by missing percentage
 missing_analysis <- missing_analysis[order(-missing_analysis$Missing_Percent), ]
-print(missing_analysis)
 
-# Focus on the four continuous variables
-continuous_vars <- c("BMI_Category", "Exercise_Past_30_Days", "Mental_Health_Days", "Poor_Physical_Health_Days")
-
-cat("\n=== CONTINUOUS VARIABLES MISSING VALUE RATES ===\n")
-for(var in continuous_vars) {
-  if(var %in% names(Heart_data)) {
-    missing_count <- sum(is.na(Heart_data[[var]]))
-    missing_pct <- (missing_count / nrow(Heart_data)) * 100
-    cat(sprintf("• %s: %d missing (%.1f%%)\n", var, missing_count, missing_pct))
-  }
-}
-
-# Categorize variables by missing percentage for appropriate handling
-high_missing <- missing_analysis$Variable[missing_analysis$Missing_Percent > 50]
-moderate_missing <- missing_analysis$Variable[missing_analysis$Missing_Percent >= 5 & missing_analysis$Missing_Percent <= 50]
-low_missing <- missing_analysis$Variable[missing_analysis$Missing_Percent < 5]
-
-cat("\nVariables categorized by missing percentage:\n")
-cat("HIGH (>50% missing - should DROP):", paste(high_missing, collapse = ", "), "\n")
-cat("MODERATE (5-50% missing - consider imputation):", paste(moderate_missing, collapse = ", "), "\n") 
-cat("LOW (<5% missing - complete case analysis):", paste(low_missing, collapse = ", "), "\n")
+kable(
+  missing_analysis,
+  caption = "Missing Value Summary for Selected Variables",
+  align = 'c',
+  format = "html"
+) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "bordered", "hover"),
+    full_width = FALSE,
+    position = "left"
+  )
 ```
 
-# Data Transformation
-```{r}
-# Transform all variables that exist in the dataset for potential analysis
-
-# Age groups
-Heart_data$Age_Group_5yr <- factor(
-  Heart_data$Age_Group_5yr,
-  levels = 1:13,
-  labels = c(
-    "18-24", "25-29", "30-34", "35-39", "40-44", 
-    "45-49", "50-54", "55-59", "60-64", "65-69", 
-    "70-74", "75-79", "80+")
-)
-
-# Demographics
-Heart_data$Sex <- factor(
-  Heart_data$Sex,
-  levels = c(1, 2),
-  labels = c("Male", "Female")
-)
-
-# Health conditions
-Heart_data$Diabetes_Status <- factor(
-  Heart_data$Diabetes_Status,
-  levels = c(1, 2, 3, 4),
-  labels = c("Yes", "Yes/borderline", "Yes/pregnancy only", "No")
-)
-
-# Smoking variables
-Heart_data$Smoking_Status <- factor(
-  Heart_data$Smoked_100_Cigarettes_Lifetime,
-  levels = c(1, 2),
-  labels = c("Yes", "No")
-)
-
-# BMI_Category_Alt 
-Heart_data$BMI_Category_Alt  <- factor(
-  Heart_data$BMI_Category_Alt ,
-  levels = c(1, 2, 3, 4),
-  labels = c("Underweight", "Normal Weight", "Overweight", "Obese")
-)
-
-# Exercise variables
-Heart_data$Exercise_Past_30_Days <- factor(
-  Heart_data$Exercise_Past_30_Days,
-  levels = c(1, 2),
-  labels = c("Yes", "No")
-)
-
-# Cardiovascular history
-Heart_data$CVD_Stroke_History <- factor(
-  Heart_data$CVD_Stroke_History,
-  levels = c(1, 2),
-  labels = c("Yes", "No")
-)
-
-Heart_data$Coronary_Heart_Disease <- factor(
-  Heart_data$Coronary_Heart_Disease,
-  levels = c(1, 2),
-  labels = c("Yes", "No")
-)
-
-Heart_data$Heart_Attack_History <- factor(
-  Heart_data$Heart_Attack_History,
-  levels = c(1, 2),
-  labels = c("Yes", "No")
-)
-
-# General health
-Heart_data$General_Health_Status <- factor(
-  Heart_data$General_Health_Status,
-  levels = c(1, 2, 3, 4, 5),
-  labels = c("Excellent", "Very Good", "Good", "Fair", "Poor")
-)
-
-# BMI transformation (convert from coded value to actual BMI)
-Heart_data$BMI_Value <- Heart_data$BMI_Category / 100
-
-# Additional variables that exist in dataset
-if("Flu_Vaccination" %in% names(Heart_data)) {
-  Heart_data$Flu_Vaccination <- factor(
-    Heart_data$Flu_Vaccination,
-    levels = c(1, 2),
-    labels = c("Yes", "No")
-  )
-}
-
-if("Difficulty_Walking_Stairs" %in% names(Heart_data)) {
-  Heart_data$Difficulty_Walking_Stairs <- factor(
-    Heart_data$Difficulty_Walking_Stairs,
-    levels = c(1, 2),
-    labels = c("Yes", "No")
-  )
-}
-
-str(Heart_data)
-summary(Heart_data)
-```
+---
 
 # Data Cleaning
-
-## Statistically Sound Missing Value Handling
-
-```{r}
-cat("=== APPLYING EVIDENCE-BASED MISSING VALUE TREATMENT ===\n")
-
-# Step 1: Drop variables with >50% missing (statistically unreliable)
+## Missing Value Treatment (Imputation)
+```{r, results='asis'}
+rows_initial <- nrow(Heart_data)
 Heart_clean <- Heart_data
 
-# Check which variables have >50% missing and should be dropped
-high_missing_vars <- c()
-for(var in names(Heart_clean)) {
-  missing_pct <- (sum(is.na(Heart_clean[[var]])) / nrow(Heart_clean)) * 100
-  if(missing_pct > 50) {
-    high_missing_vars <- c(high_missing_vars, var)
-  }
-}
-
-if(length(high_missing_vars) > 0) {
-  cat("Dropping variables with >50% missing:", paste(high_missing_vars, collapse = ", "), "\n")
-  Heart_clean <- Heart_clean[, !names(Heart_clean) %in% high_missing_vars]
-}
-
-# Step 2: Handle continuous variables with 5-20% missing (ONLY these get imputed)
-continuous_vars <- c("BMI_Value", "Mental_Health_Days", "Poor_Physical_Health_Days", "Alcohol_Days_Per_Month", "Binge_Drinking_Episodes", "Max_Drinks_Single_Occasion")
-available_continuous <- continuous_vars[continuous_vars %in% names(Heart_clean)]
-
-cat("\n=== CONTINUOUS VARIABLE IMPUTATION (5-20% missing only) ===\n")
-for(var in available_continuous) {
-  missing_count <- sum(is.na(Heart_clean[[var]]))
-  missing_pct <- (missing_count / nrow(Heart_clean)) * 100
-  
-  if(missing_pct >= 5 && missing_pct <= 20) {
-    # Use MEDIAN imputation (more robust than mean)
-    var_median <- median(Heart_clean[[var]], na.rm = TRUE)
-    Heart_clean[[var]][is.na(Heart_clean[[var]])] <- var_median
-    cat(sprintf(" %s: Imputed %d values (%.1f%%) with MEDIAN (%.2f)\n", 
-                var, missing_count, missing_pct, var_median))
-  } else if(missing_pct > 20) {
-    cat(sprintf(" %s: %.1f%% missing - Consider advanced imputation or dropping\n", var, missing_pct))
-  } else {
-    cat(sprintf(" %s: %.1f%% missing - Keeping as NA for complete case analysis\n", var, missing_pct))
-  }
-}
-
-# Step 3: For categorical variables - NO imputation, use complete case analysis
-cat("\n=== CATEGORICAL VARIABLES - NO IMPUTATION ===\n")
-categorical_vars <- names(Heart_clean)[sapply(Heart_clean, function(x) is.factor(x) || is.character(x))]
-for(var in categorical_vars) {
-  missing_count <- sum(is.na(Heart_clean[[var]]))
-  missing_pct <- (missing_count / nrow(Heart_clean)) * 100
-  if(missing_count > 0) {
-    cat(sprintf(" %s: %d missing (%.1f%%) - Will use complete case analysis\n", var, missing_count, missing_pct))
-  }
-}
-
-# Step 4: Remove rows with missing CRITICAL variables only
-critical_vars <- c("Coronary_Heart_Disease", "General_Health_Status", "Sex")
-available_critical <- critical_vars[critical_vars %in% names(Heart_clean)]
-
-# Remove invalid General Health Status responses (7=Don't know, 9=Refused) before final cleaning
-if("General_Health_Status" %in% names(Heart_clean)) {
-  valid_health_responses <- Heart_clean$General_Health_Status %in% c("Excellent", "Very Good", "Good", "Fair", "Poor")
-  invalid_health_count <- sum(!valid_health_responses, na.rm = TRUE)
-  if(invalid_health_count > 0) {
-    cat(sprintf("Removing %d rows with invalid General Health Status responses\n", invalid_health_count))
-    Heart_clean <- Heart_clean[valid_health_responses, ]
-  }
-}
-
-# Step 5: Check rows with missing BMI_Category_Alt but having BMI_Value (Used in one research question)
-if("BMI_Category_Alt" %in% names(Heart_clean)) {
-  missing_bmi_cat <- sum(is.na(Heart_clean$BMI_Category_Alt) & !is.na(Heart_clean$BMI_Value))
-  if(missing_bmi_cat > 0) {
-    cat(sprintf("Note: %d rows missing BMI_Category_Alt but having BMI_Value - will be excluded in relevant analyses\n", missing_bmi_cat))
-  }
-
-  # Impute missing BMI_Category_Alt based on BMI_Value (standard cutoffs)
-  if("BMI_Category_Alt" %in% names(Heart_clean) && "BMI_Value" %in% names(Heart_clean)) {
-    missing_idx <- which(is.na(Heart_clean$BMI_Category_Alt) & !is.na(Heart_clean$BMI_Value))
-    if(length(missing_idx) > 0) {
-      bmi_vals <- Heart_clean$BMI_Value[missing_idx]
-      # Standard BMI cutoffs
-      bmi_cat <- cut(bmi_vals,
-                    breaks = c(-Inf, 18.5, 24.9, 29.9, Inf),
-                    labels = c("Underweight", "Normal Weight", "Overweight", "Obese"),
-                    right = TRUE)
-      Heart_clean$BMI_Category_Alt[missing_idx] <- bmi_cat
-      cat(sprintf("Filled %d missing BMI_Category_Alt values based on BMI_Value.\n", length(missing_idx)))
+# Impute continuous variables with 5-20% missing using median
+continuous_vars <- c("BMI_Value", "Poor_Physical_Health_Days")
+for(var in continuous_vars) {
+  if(var %in% names(Heart_clean)) {
+    missing_before <- sum(is.na(Heart_clean[[var]]))
+    missing_pct <- mean(is.na(Heart_clean[[var]])) * 100
+    if(missing_pct >= 5 && missing_pct <= 20) {
+      var_median <- median(Heart_clean[[var]], na.rm = TRUE)
+      Heart_clean[[var]][is.na(Heart_clean[[var]])] <- var_median
+      cat(sprintf("Imputed %d missing values in %s with median (%.2f)\n", missing_before, var, var_median))
     }
   }
 }
 
-rows_before <- nrow(Heart_clean)
-Heart_clean <- Heart_clean[complete.cases(Heart_clean[available_critical]), ]
-rows_after <- nrow(Heart_clean)
-
-cat(sprintf("Rows removed due to missing CRITICAL variables: %d\n", rows_before - rows_after))
-cat(sprintf("Final dataset: %d rows × %d columns\n", nrow(Heart_clean), ncol(Heart_clean)))
-cat(sprintf("Data retention rate: %.1f%%\n", (rows_after / nrow(Heart_data)) * 100))
-
-# Check remaining missing values
-remaining_missing <- sapply(Heart_clean, function(x) sum(is.na(x)))
-remaining_missing <- remaining_missing[remaining_missing > 0]
-if(length(remaining_missing) > 0) {
-  cat("\nRemaining missing values (for complete case analysis in specific tests):\n")
-  print(remaining_missing)
-} else {
-  cat("\n No remaining missing values\n")
+# Impute missing BMI_Category_Alt based on BMI_Value
+if("BMI_Category_Alt" %in% names(Heart_clean) && "BMI_Value" %in% names(Heart_clean)) {
+  missing_idx <- which(is.na(Heart_clean$BMI_Category_Alt) & !is.na(Heart_clean$BMI_Value))
+  if(length(missing_idx) > 0) {
+    bmi_vals <- Heart_clean$BMI_Value[missing_idx]
+    bmi_cat <- cut(bmi_vals,
+                  breaks = c(-Inf, 18.5, 24.9, 29.9, Inf),
+                  labels = c("Underweight", "Normal Weight", "Overweight", "Obese"),
+                  right = TRUE)
+    Heart_clean$BMI_Category_Alt[missing_idx] <- bmi_cat
+    cat(sprintf("Imputed %d missing BMI_Category_Alt values based on BMI_Value\n", length(missing_idx)))
+  }
 }
-
-str(Heart_clean)
-summary(Heart_clean)
 ```
 
-## Statistically Appropriate Outlier Treatment (Removing impossible data / Dirty data for average human being)
+---
 
-```{r}
-cat("=== OUTLIER ANALYSIS WITH CLINICAL RELEVANCE ===\n")
+## Outlier Removal and Invalid Data Handling
+```{r, results='asis'}
 
-# Store data before outlier removal for comparison
-Heart_before_outlier <- Heart_clean
+# Remove invalid General Health Status responses
+if("General_Health_Status" %in% names(Heart_clean)) {
+  rows_before <- nrow(Heart_clean)
+  valid_health <- Heart_clean$General_Health_Status %in% c("Excellent", "Very Good", "Good", "Fair", "Poor")
+  Heart_clean <- Heart_clean[valid_health, ]
+  cat(sprintf("Removed %d rows with invalid General Health Status responses\n", rows_before - nrow(Heart_clean)))
+}
 
-# Only remove IMPOSSIBLE values, not clinical outliers
+# Remove invalid Exercise_Past_30_Days responses
+if ("Exercise_Past_30_Days" %in% names(Heart_clean)) {
+  rows_before <- nrow(Heart_clean)
+  valid_exercise <- Heart_clean$Exercise_Past_30_Days %in% c("Yes", "No")
+  Heart_clean <- Heart_clean[valid_exercise, ]
+  cat(sprintf("Removed %d rows with invalid Exercise_Past_30_Days responses\n", rows_before - nrow(Heart_clean)))
+}
+
+# Remove Age groups above 69 years
+if ("Age" %in% names(Heart_clean)) {
+  rows_before <- nrow(Heart_clean)
+  valid_age_groups <- c("18-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69")
+  Heart_clean <- Heart_clean[Heart_clean$Age %in% valid_age_groups, ]
+  cat(sprintf("Removed %d rows with Age above 69 years\n", rows_before - nrow(Heart_clean)))
+}
+
+# Remove rows with missing critical variables
+critical_vars <- c("Coronary_Heart_Disease", "General_Health_Status", "Sex", "Exercise_Past_30_Days", "Diabetes_Status", "Smoking_Status", "BMI_Value", "BMI_Category_Alt", "Age")
+available_critical <- critical_vars[critical_vars %in% names(Heart_clean)]
+rows_before <- nrow(Heart_clean)
+Heart_clean <- Heart_clean[complete.cases(Heart_clean[available_critical]), ]
+cat(sprintf("Removed %d rows with missing critical variables\n", rows_before - nrow(Heart_clean)))
+
+# Outlier treatment for BMI_Value
 if("BMI_Value" %in% names(Heart_clean)) {
-  # BMI: Only remove impossible values (<10 or >70 kg/m²)
+  rows_before <- nrow(Heart_clean)
   bmi_outliers <- which(Heart_clean$BMI_Value < 10 | Heart_clean$BMI_Value > 70)
   if(length(bmi_outliers) > 0) {
-    cat(sprintf("Removing %d impossible BMI values (<10 or >70)\n", length(bmi_outliers)))
     Heart_clean <- Heart_clean[-bmi_outliers, ]
-  } else {
-    cat("All BMI values within plausible human range\n")
+    cat(sprintf("Removed %d rows with impossible BMI values (<10 or >70)\n", rows_before - nrow(Heart_clean)))
   }
 }
 
-# Health days: Should be 0-30, but we already handled this in data transformation
-# Not removing high values as they may be clinically relevant
-
-# Final data check - remove rows missing ONLY the variables we actually use in our 5 SMART research questions
-
-analysis_vars <- c("BMI_Value", "BMI_Category_Alt", "General_Health_Status", "Coronary_Heart_Disease", 
-                   "Sex", "Exercise_Past_30_Days", "Diabetes_Status", "Smoking_Status")
-available_analysis_vars <- analysis_vars[analysis_vars %in% names(Heart_clean)]
-
-rows_before_final <- nrow(Heart_clean)
-Heart_clean <- Heart_clean[complete.cases(Heart_clean[available_analysis_vars]), ]
-rows_after_final <- nrow(Heart_clean)
-
-if(rows_before_final != rows_after_final) {
-  cat(sprintf("Removed %d rows missing critical analysis variables\n", rows_before_final - rows_after_final))
-} else {
-  cat("No additional rows removed - all critical variables complete\n")
-}
-
-cat(sprintf("\nFinal cleaned dataset: %d rows × %d columns\n", nrow(Heart_clean), ncol(Heart_clean)))
-cat(sprintf("Overall data retention: %.1f%% of original data\n", (nrow(Heart_clean) / nrow(Heart_data)) * 100))
-
-# Validate our approach preserved key relationships by checking if the key variable BMI & Coronary_Heart_Disease are present in the final Dataset
-if("BMI_Value" %in% names(Heart_clean) && "Coronary_Heart_Disease" %in% names(Heart_clean)) {
-  bmi_by_coronary <- aggregate(BMI_Value ~ Coronary_Heart_Disease, Heart_clean, function(x) c(mean=mean(x), sd=sd(x), n=length(x)))
-  cat("\nValidation - BMI by Coronary Heart Disease Status (preserved for analysis):\n")
-  print(bmi_by_coronary)
-}
-
-str(Heart_clean)
 ```
+
 
 # Descriptive Statistics
+```{r, results='asis'}
+# Display first few rows of the dataset in a styled box
+kable(head(Heart_clean[, 1:6]), caption = "Final Dataset Preview with few variables", align = 'c', format = "html") %>%
+  kable_styling(bootstrap_options = c("striped", "bordered", "hover"), full_width = FALSE, position = "left")
 
-## Summary
-```{r}
-summary(Heart_clean)
+rows_final <- nrow(Heart_clean)
+cat(sprintf("Total rows dropped during cleaning: %d\n", rows_initial - rows_final))
+cat(sprintf("Initial dataset size: %d rows\n", rows_initial))
+cat(sprintf("Final cleaned dataset size: %d rows\n", rows_final))
 ```
 
-## Structure
-```{r}
-str(Heart_clean)
-```
+---
 
-## Data Visualizations
-```{r}
-library(ggplot2)
-#Coronary_Heart_Disease
+# Data Visualizations
+
+## Coronary Heart Disease Distribution
+```{r, results='asis'}
 ggplot(Heart_clean, aes(x = Coronary_Heart_Disease)) +
-  geom_bar(fill = "navy") +
-  labs(title = "Distribution of Coronary Heart Disease",
-       x = "Coronary Heart Disease", y = "Count")
+  geom_bar(fill = "#249bd3") +
+  labs(x = "Coronary Heart Disease", y = "Count")
 ```
 
-From the chart of Coronary Heart Disease, we can see that most of the samples do not have this condition.
+*Most samples do not have coronary heart disease.*
 
-
-```{r}
-# Diabetes Status
+## Diabetes Status Distribution
+```{r, results='asis'}
 ggplot(Heart_clean, aes(x = Diabetes_Status)) +
   geom_bar(fill = "forestgreen") +
-  labs(title = "Distribution of Diabetes Status",
-       x = "Diabetes Status", y = "Count")
+  labs(x = "Diabetes Status", y = "Count")
 ```
 
-From the chart of Diabetes Status, we can see that most of the samples have some form of diabetes, especially those related to pregnancy.
+*Most samples have some form of diabetes, especially pregnancy-related.*
 
-
-```{r}
-# Smoking Status
+## Smoking Status Distribution
+```{r, results='asis'}
 ggplot(Heart_clean, aes(x = Smoking_Status)) +
   geom_bar(fill = "red") +
-  labs(title = "Distribution of Smoking Status",
-       x = "Smoking Status", y = "Count")
+  labs(x = "Smoking Status", y = "Count")
 ```
 
-From the chart of Smoking Status, we can see that the number of non-smokers is slightly higher than that of smokers.
+*Non-smokers slightly outnumber smokers.*
 
-
+## General Health Status Distribution
 ```{r}
-#General_Health_Status
 ggplot(Heart_clean, aes(x = General_Health_Status)) +
   geom_bar(fill = "blue") +
-  labs(title = "Distribution of General Health Status",
-       x = "General Health Status", y = "Count")
+  labs(x = "General Health Status", y = "Count")
 ```
 
-From the chart of General Health Status, we can see that most of the samples are in good health, while the proportion of those with poor health is the smallest.
+*Most samples report good health; poor health is least common.*
 
-
+## Exercise in Past 30 Days
 ```{r}
-#Exercise_Past_30_Days 
 ggplot(Heart_clean, aes(x = Exercise_Past_30_Days)) +
   geom_bar(fill = "purple") +
-  labs(title = "Distribution Exercise Past 30 Days",
-       x = "Exercise Past 30 Days", y = "Count")
+  labs(x = "Exercise Past 30 Days", y = "Count")
 ```
 
-From the chart of Exercise in the Past 30 Days, we can see that most of the samples have exercised within the past 30 days.
+*Most samples exercised in the past 30 days.*
 
-
+## BMI Category Distribution
 ```{r}
-#BMI_Category
 ggplot(Heart_clean, aes(x = BMI_Category_Alt)) +
   geom_bar(fill = "orange") +
-  labs(title = "Distribution BMI_Category",
-       x = "BMI Category", y = "Count")
-
-
+  labs(x = "BMI Category", y = "Count")
 ```
 
-From the chart of BMI Category (Alt), we can see that most of the samples fall within the normal and obese BMI ranges.
+*Most samples are in the normal and obese BMI ranges.*
 
-
+## BMI Value Distribution
 ```{r}
-# BMI_Value
 ggplot(na.omit(Heart_clean), aes(x = BMI_Value)) +
   geom_histogram(binwidth = 2, fill = "skyblue", color = "black") +
-  labs(title = "Distribution of BMI",
-       x = "BMI_Value", y = "Count")
+  labs(x = "BMI Value", y = "Count")
 ```
 
-From the chart of BMI Value, we can see that the distribution is right-skewed, with most of the data concentrated in the 20–40 range.
+*BMI is right-skewed, concentrated in the 20–40 range.*
 
+---
 
 # Data Analysis
 
-## Question 1: Is there a significant difference in BMI between people with and without coronary heart disease?
+## Q1: Is there a significant difference in BMI between people with and without coronary heart disease?
 
 **Statistical Test:** T-test (comparing means of two groups)
-
 ```{r}
-# Basic descriptive statistics
 aggregate(BMI_Value ~ Coronary_Heart_Disease, data = Heart_clean, 
-          FUN = function(x) c(mean = mean(x, na.rm = TRUE), 
-                              sd = sd(x, na.rm = TRUE),
-                              count = length(x[!is.na(x)])))
-
-# Box plot visualization
+          FUN = function(x) c(mean = mean(x, na.rm = TRUE), sd = sd(x, na.rm = TRUE), count = length(x[!is.na(x)])))
 boxplot(BMI_Value ~ Coronary_Heart_Disease, data = Heart_clean,
         main = "BMI by Coronary Heart Disease Status",
         xlab = "Coronary Heart Disease", ylab = "BMI",
         col = c("lightblue", "coral"))
-
-# T-test
-t_test_bmi <- t.test(BMI_Value ~ Coronary_Heart_Disease, data = Heart_clean)
+t_test_bmi <- t.test(BMI_Value ~ Coronary_Heart_Disease, data = Heart_clean, conf.level = 0.95)
 print(t_test_bmi)
-
-# Simple interpretation
 if(t_test_bmi$p.value < 0.05) {
-  cat("Result: There IS a significant difference in BMI between groups (p < 0.05)")
+  cat("Result: There is a significant difference in BMI between groups (p < 0.05)")
 } else {
-  cat("Result: There is NO significant difference in BMI between groups (p >= 0.05)")
+  cat("Result: There is no significant difference in BMI between groups (p >= 0.05)")
 }
 ```
 
-For Q1, the t-test shows a very strong difference in BMI between people with and without coronary heart disease (p < 2e-16). This means it is almost impossible that the result happened by chance, suggesting that individuals with coronary heart disease tend to have higher BMI on average.
+*The t-test shows a very strong difference in BMI between people with and without coronary heart disease (p < 2e-16). This means it is almost impossible that the result happened by chance, suggesting that individuals with coronary heart disease tend to have higher BMI on average.
+Although the boxplot shows similar BMI distributions between the two groups, the t-test result (p < 0.05) indicates a significant difference. This may be due to the large sample size detecting small mean differences.*
 
-Although the boxplot shows similar BMI distributions between the two groups, the t-test result (p < 0.05) indicates a significant difference. This may be due to the large sample size detecting small mean differences.
 
+---
 
-## Question 2: Is smoking status associated with coronary heart disease?
+## Q2: Is smoking status associated with coronary heart disease?
 
 **Statistical Test:** Chi-square test (testing association between two categorical variables)
 
 ```{r}
-# Create contingency table
 smoking_table <- table(Heart_clean$Smoking_Status, Heart_clean$Coronary_Heart_Disease)
-print("Contingency Table:")
 print(smoking_table)
-
-# Calculate percentages
 prop_table <- prop.table(smoking_table, margin = 1) * 100
-print("Percentages by smoking status:")
 print(round(prop_table, 1))
-
-# Bar plot visualization
-barplot(smoking_table, beside = TRUE, 
-        main = "Smoking Status and Coronary Heart Disease",
+barplot(smoking_table, beside = TRUE,
         xlab = "Coronary Heart Disease", ylab = "Count",
         col = c("lightgreen", "pink"),
         legend = TRUE)
-
-# Chi-square test
 chi_test_smoking <- chisq.test(smoking_table)
 print(chi_test_smoking)
-
-# Simple interpretation
 if(chi_test_smoking$p.value < 0.05) {
-  cat("Result: There IS a significant association between smoking and coronary heart disease (p < 0.05)")
+  cat("Result: There is a significant association between smoking and coronary heart disease (p < 0.05)")
 } else {
-  cat("Result: There is NO significant association between smoking and coronary heart disease (p >= 0.05)")
+  cat("Result: There is no significant association between smoking and coronary heart disease (p >= 0.05)")
 }
 ```
 
+*The chi-squared test shows a very strong relationship between smoking status and coronary heart disease (p < 2e-16). This means it is almost impossible that the result happened by chance, suggesting that smokers are much more likely to have coronary heart disease than non-smokers.
+We can clearly see from the chart that people who smoke have a higher proportion of coronary heart disease compared to those who do not smoke.*
 
-For Q2, the chi-squared test shows a very strong relationship between smoking status and coronary heart disease (p < 2e-16). This means it is almost impossible that the result happened by chance, suggesting that smokers are much more likely to have coronary heart disease than non-smokers.
+---
 
-We can clearly see from the chart that people who smoke have a higher proportion of coronary heart disease compared to those who do not smoke.
-
-
-## Question 3: Does BMI vary significantly across different general health status levels?
+## Q3: Does BMI vary significantly across different general health status levels?
 
 **Statistical Test:** ANOVA (comparing means across multiple groups)
 
 ```{r}
-# Basic descriptive statistics by general health status
 aggregate(BMI_Value ~ General_Health_Status, data = Heart_clean, 
-          FUN = function(x) c(mean = mean(x, na.rm = TRUE), 
-                              sd = sd(x, na.rm = TRUE),
-                              count = length(x[!is.na(x)])))
-
-# Box plot visualization
+          FUN = function(x) c(mean = mean(x, na.rm = TRUE), sd = sd(x, na.rm = TRUE), count = length(x[!is.na(x)])))
 boxplot(BMI_Value ~ General_Health_Status, data = Heart_clean,
         main = "BMI by General Health Status",
         xlab = "General Health Status", ylab = "BMI",
-        las = 2, # rotate x-axis labels
+        las = 2,
         col = c("darkgreen", "lightgreen", "yellow", "orange", "red"))
-
-# ANOVA test
 anova_bmi_health <- aov(BMI_Value ~ General_Health_Status, data = Heart_clean)
 anova_summary <- summary(anova_bmi_health)
 print(anova_summary)
-
-# Simple interpretation
 p_value_anova <- anova_summary[[1]][["Pr(>F)"]][1]
 if(p_value_anova < 0.05) {
-  cat("Result: BMI DOES vary significantly across general health status levels (p < 0.05)")
+  cat("Result: BMI does vary significantly across general health status levels (p < 0.05)")
 } else {
-  cat("Result: BMI does NOT vary significantly across general health status levels (p >= 0.05)")
+  cat("Result: BMI does not vary significantly across general health status levels (p >= 0.05)")
 }
 ```
 
-For Q3, the ANOVA test shows a very strong difference in BMI across different general health status levels (p < 2e-16). This means it is almost impossible that the result happened by chance, suggesting that BMI varies significantly depending on an individual’s reported health condition.
+*The ANOVA test shows a very strong difference in BMI across different general health status levels (p < 2e-16). This means it is almost impossible that the result happened by chance, suggesting that BMI varies significantly depending on an individual’s reported health condition.
+From the chart, we can also observe that people with poorer health tend to have higher BMI values, while those with better health tend to have lower BMI values.*
 
-From the chart, we can also observe that people with poorer health tend to have higher BMI values, while those with better health tend to have lower BMI values.
+---
 
-
-## Question 4: Exercise Participation Across BMI Categories
-
-**Research Question**: Does exercise participation vary significantly across different BMI categories, suggesting a role in weight management?
+## Q4: Does exercise participation vary significantly across different BMI categories, suggesting a role in weight management?
 
 **Method**: Chi-square test of independence
-
-```{r question4}
-
-## Use existing BMI_Category_Alt variable for analysis, exclude NA values
+```{r}
 bmi_exercise_table <- table(Heart_clean$BMI_Category_Alt, Heart_clean$Exercise_Past_30_Days, useNA = "no")
-print("Contingency Table: BMI Categories vs Exercise Participation")
 print(bmi_exercise_table)
-
-# Calculate percentages within each BMI category
-print("Exercise participation rates by BMI category:")
 exercise_rates_by_bmi <- prop.table(bmi_exercise_table, margin=1) * 100
 print(round(exercise_rates_by_bmi, 2))
-
-# Perform chi-square test
 chi_test_bmi_exercise <- chisq.test(bmi_exercise_table)
 print(chi_test_bmi_exercise)
-
-# Create a grouped bar plot
-library(ggplot2)
 bmi_exercise_df <- as.data.frame(bmi_exercise_table)
 colnames(bmi_exercise_df) <- c("BMI_Category", "Exercise", "Count")
-
 ggplot(bmi_exercise_df, aes(x = BMI_Category, y = Count, fill = Exercise)) +
   geom_bar(stat = "identity", position = "dodge") +
   labs(title = "Exercise Participation by BMI Category",
        subtitle = "Exploring the Exercise-Weight Management Connection",
-       x = "BMI Category", 
-       y = "Count",
-       fill = "Exercise Past 30 Days") +
+       x = "BMI Category", y = "Count", fill = "Exercise Past 30 Days") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+*The chi-squared test shows a very strong relationship between past-30-day exercise participation and BMI category (p < 2e-16). This means it is almost impossible that the result happened by chance. People who reported exercising in the past 30 days tend to fall into lower BMI categories, while those who did not exercise are more likely to be in higher BMI groups. This pattern suggests that regular physical activity plays an important role in weight management and maintaining a healthier BMI.
+From the chart, we can also observe that people who are underweight or obese have a noticeably lower rate of exercise in the past 30 days compared to those with a moderate BMI.*
 
-For Q4, the chi-squared test shows a very strong relationship between past-30-day exercise participation and BMI category (p < 2e-16). This means it is almost impossible that the result happened by chance. People who reported exercising in the past 30 days tend to fall into lower BMI categories, while those who did not exercise are more likely to be in higher BMI groups. This pattern suggests that regular physical activity plays an important role in weight management and maintaining a healthier BMI.
-
-From the chart, we can also observe that people who are underweight or obese have a noticeably lower rate of exercise in the past 30 days compared to those with a moderate BMI.
-
+---
 
 ## Question 5: Is diabetes status associated with coronary heart disease?
 
 **Statistical Test:** Chi-square test (testing association between two categorical variables)
 
 ```{r}
-# Create contingency table
 diabetes_table <- table(Heart_clean$Diabetes_Status, Heart_clean$Coronary_Heart_Disease)
-print("Contingency Table:")
 print(diabetes_table)
-
-# Calculate percentages
 prop_table_diabetes <- prop.table(diabetes_table, margin = 1) * 100
-print("Percentages by diabetes status:")
 print(round(prop_table_diabetes, 1))
-
-# Bar plot visualization
 barplot(diabetes_table, beside = TRUE, 
         main = "Diabetes Status and Coronary Heart Disease",
         xlab = "Coronary Heart Disease", ylab = "Count",
         col = c("yellow", "orange", "red", "green"),
         legend = TRUE)
-
-# Chi-square test
 chi_test_diabetes <- chisq.test(diabetes_table)
 print(chi_test_diabetes)
-
-# Simple interpretation
 if(chi_test_diabetes$p.value < 0.05) {
-  cat("Result: There IS a significant association between diabetes and coronary heart disease (p < 0.05)")
+  cat("Result: There is a significant association between diabetes and coronary heart disease (p < 0.05)")
 } else {
-  cat("Result: There is NO significant association between diabetes and coronary heart disease (p >= 0.05)")
+  cat("Result: There is no significant association between diabetes and coronary heart disease (p >= 0.05)")
 }
 ```
 
-For Q5, the chi-squared test shows a very strong relationship between diabetes status and coronary heart disease (p < 2e-16). This means it is almost impossible that the result happened by chance. People with diabetes or prediabetes have a much higher likelihood of developing coronary heart disease compared to those without diabetes, suggesting that poor blood sugar control is closely linked to increased heart disease risk.
+*The chi-squared test shows a very strong relationship between diabetes status and coronary heart disease (p < 2e-16). This means it is almost impossible that the result happened by chance. People with diabetes or prediabetes have a much higher likelihood of developing coronary heart disease compared to those without diabetes, suggesting that poor blood sugar control is closely linked to increased heart disease risk.
+Moreover, we can see from the chart that individuals with diabetes have a noticeably higher proportion of coronary heart disease compared to others.*
 
-Moreover, We can see from the chart that individuals with diabetes have a noticeably higher proportion of coronary heart disease compared to others.
-
+---
 
 # Conclusion
 
-This analysis explored key lifestyle and health factors associated with coronary disease diagnosis. Statistical tests revealed strong and consistent patterns across multiple dimensions. Individuals with higher BMI, diabetes, or smoking habits showed significantly greater likelihood of having CHD. ANOVA results confirmed that BMI varies notably with self-reported health status, indicating that poor health perception aligns with higher BMI. Moreover, those who engaged in regular exercise within the past 30 days tended to maintain lower BMI categories, reinforcing the importance of physical activity in weight management and heart health.
+This analysis examined key lifestyle and health determinants associated with coronary heart disease (CHD). The statistical results demonstrated strong and consistent relationships: elevated BMI, diabetes, and smoking habits were significantly linked to an increased likelihood of CHD. Additionally, BMI showed notable variation across self-reported health status levels, while regular physical activity was associated with healthier BMI categories. These findings underscore the critical importance of adopting and maintaining healthy lifestyle behaviors to prevent and manage coronary heart disease.
 
-Overall, the findings suggest that coronary heart disease is strongly linked to modifiable risk factors such as body weight, smoking, diabetes, and exercise habits. These results highlight the crucial role of healthy lifestyle choices in preventing and managing heart disease.
+## Limitations
+- Results are based on available data with some missing values
+- Cross-sectional data limits causal conclusions
+- Statistical significance doesn't always mean clinical significance
 
+## Practical Implications
+
+The results help identify important risk factors for coronary heart disease and can guide
+
+- Healthcare screening programs
+- Public health interventions 
+- Individual patient care decisions to reduce CHD incidence through lifestyle modifications.
