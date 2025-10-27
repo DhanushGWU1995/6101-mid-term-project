@@ -20,7 +20,30 @@ options(scientific = TRUE, digits = 3)
 
 # Abstract
 
-This study investigates key lifestyle and health factors associated with coronary heart disease (CHD) using a large, population-based survey dataset. Through rigorous data cleaning, evidence-based handling of missing values, and clinically guided outlier removal, the analysis ensures robust statistical inference. Exploratory data analysis is conducted using t-tests, chi-square tests, and ANOVA to examine the roles of BMI, smoking, diabetes, exercise, and general health status. The results demonstrate strong and consistent associations, indicating that higher BMI, diabetes, and smoking are linked to an increased risk of CHD, while regular exercise and better self-reported health status are associated with a lower risk. These findings emphasize the significance of modifiable lifestyle behaviors in the prevention and management of coronary heart disease.
+This study investigates key lifestyle and health factors associated with coronary heart disease (CHD) of people within the age of 70 using a large, population-based survey dataset. Through rigorous data cleaning, evidence-based handling of missing values, and clinically guided outlier removal, the analysis ensures robust statistical inference. Exploratory data analysis is conducted using t-tests, chi-square tests, and ANOVA to examine the roles of BMI, smoking, diabetes, exercise, and general health status. The results demonstrate strong and consistent associations, indicating that higher BMI, diabetes, and smoking are linked to an increased risk of CHD, while regular exercise and better self-reported health status are associated with a lower risk. These findings emphasize the significance of modifiable lifestyle behaviors in the prevention and management of coronary heart disease.
+
+---
+
+# Variables Used for Analysis
+
+The following variables were selected based on clinical relevance and prior research indicating their association with coronary heart disease (CHD):
+
+- **Age**: Age group of the respondent
+- **Sex**: Biological sex
+- **Diabetes_Status**: Diabetes diagnosis status
+- **Smoking_Status**: Lifetime smoking status
+- **BMI_Category_Alt**: BMI category (Underweight, Normal, Overweight, Obese)
+- **Exercise_Past_30_Days**: Physical activity in the past 30 days
+- **CVD_Stroke_History**: History of cardiovascular disease or stroke
+- **Coronary_Heart_Disease**: CHD diagnosis status (outcome variable)
+- **Heart_Attack_History**: History of heart attack
+- **General_Health_Status**: Self-reported general health status
+- **BMI_Value**: Calculated BMI value
+
+# Statistical Rationale for Variable Selection
+
+These variables were chosen because they represent established risk factors or potential predictors for coronary heart disease, as supported by epidemiological studies and clinical guidelines. Including demographic (age, sex), behavioral (smoking, exercise), metabolic (BMI, diabetes), and self-reported health measures allows for a comprehensive assessment of factors influencing CHD risk. This approach ensures that the analysis captures both modifiable and non-modifiable determinants, enabling robust statistical inference and meaningful public health recommendations.
+Additionally, variable selection is also considered based on the missing percentage of each variable to ensure reliability and completeness of analysis.
 
 ---
 
@@ -48,15 +71,6 @@ Heart_data$Coronary_Heart_Disease <- factor(Heart_data$Coronary_Heart_Disease, l
 Heart_data$Heart_Attack_History <- factor(Heart_data$Heart_Attack_History, levels = c(1, 2), labels = c("Yes", "No"))
 Heart_data$General_Health_Status <- factor(Heart_data$General_Health_Status, levels = c(1, 2, 3, 4, 5), labels = c("Excellent", "Very Good", "Good", "Fair", "Poor"))
 Heart_data$BMI_Value <- Heart_data$BMI_Category / 100
-if("Flu_Vaccination" %in% names(Heart_data)) {
-  Heart_data$Flu_Vaccination <- factor(Heart_data$Flu_Vaccination, levels = c(1, 2), labels = c("Yes", "No"))
-}
-if("Difficulty_Walking_Stairs" %in% names(Heart_data)) {
-  Heart_data$Difficulty_Walking_Stairs <- factor(Heart_data$Difficulty_Walking_Stairs, levels = c(1, 2), labels = c("Yes", "No"))
-}
-if("Poor_Physical_Health_Days" %in% names(Heart_data)) {
-  Heart_data$Poor_Physical_Health_Days <- as.numeric(Heart_data$Poor_Physical_Health_Days)
-}
 
 names(Heart_data)[names(Heart_data) == "Age_Group_5yr"] <- "Age"
 
@@ -64,8 +78,7 @@ names(Heart_data)[names(Heart_data) == "Age_Group_5yr"] <- "Age"
 selected_vars <- c(
   "Age", "Sex", "Diabetes_Status", "Smoking_Status", "BMI_Category_Alt",
   "Exercise_Past_30_Days", "CVD_Stroke_History", "Coronary_Heart_Disease",
-  "Heart_Attack_History", "General_Health_Status", "BMI_Value",
-  "Flu_Vaccination", "Difficulty_Walking_Stairs", "Poor_Physical_Health_Days"
+  "Heart_Attack_History", "General_Health_Status", "BMI_Value"
 )
 Heart_data <- Heart_data[, selected_vars]
 
@@ -102,13 +115,13 @@ kable(
 ---
 
 # Data Cleaning
-## Missing Value Treatment (Imputation)
+## Missing Value Treatment (Imputation - Median for continuous variables)
 ```{r, results='asis'}
 rows_initial <- nrow(Heart_data)
 Heart_clean <- Heart_data
 
 # Impute continuous variables with 5-20% missing using median
-continuous_vars <- c("BMI_Value", "Poor_Physical_Health_Days")
+continuous_vars <- c("BMI_Value")
 for(var in continuous_vars) {
   if(var %in% names(Heart_clean)) {
     missing_before <- sum(is.na(Heart_clean[[var]]))
@@ -270,6 +283,15 @@ ggplot(na.omit(Heart_clean), aes(x = BMI_Value)) +
 
 ## Q1: Is there a significant difference in BMI between people with and without coronary heart disease?
 
+**Rationale:**
+
+- We want to compare the mean BMI between two independent groups (CHD: Yes vs No). The t-test is appropriate for comparing means of a continuous variable between two groups.
+
+**Hypothesis:**
+
+- Null hypothesis (H0): The mean BMI is the same for people with and without coronary heart disease.
+- Alternative hypothesis (H1): The mean BMI differs between people with and without coronary heart disease.
+
 **Statistical Test:** T-test (comparing means of two groups)
 ```{r}
 aggregate(BMI_Value ~ Coronary_Heart_Disease, data = Heart_clean, 
@@ -294,6 +316,15 @@ Although the boxplot shows similar BMI distributions between the two groups, the
 ---
 
 ## Q2: Is smoking status associated with coronary heart disease?
+
+**Rationale:**
+
+- We are testing the association between two categorical variables (smoking status and CHD). The chi-square test of independence is suitable for this purpose.
+
+**Hypothesis:**
+
+- Null hypothesis (H0): Smoking status and coronary heart disease are independent (no association).
+- Alternative hypothesis (H1): Smoking status and coronary heart disease are associated.
 
 **Statistical Test:** Chi-square test (testing association between two categorical variables)
 
@@ -321,6 +352,15 @@ We can clearly see from the chart that people who smoke have a higher proportion
 ---
 
 ## Q3: Does BMI vary significantly across different general health status levels?
+
+**Rationale:**
+
+- We want to compare the mean BMI across more than two independent groups (different general health status levels). ANOVA is appropriate for comparing means across multiple groups.
+
+**Hypothesis:**
+
+- Null Hypothesis (H0): The mean BMI is the same across all general health status groups.
+- Alternative Hypothesis (H1): At least one general health status group has a different mean BMI.
 
 **Statistical Test:** ANOVA (comparing means across multiple groups)
 
@@ -350,6 +390,15 @@ From the chart, we can also observe that people with poorer health tend to have 
 
 ## Q4: Does exercise participation vary significantly across different BMI categories, suggesting a role in weight management?
 
+**Rationale:**
+
+- We are testing the association between two categorical variables (BMI category and exercise participation). The chi-square test of independence is suitable.
+
+**Hypothesis:**
+
+- Null hypothesis (H0): Exercise participation and BMI category are independent (no association).
+- Alternative hypothesis (H1): Exercise participation and BMI category are associated (not independent).
+
 **Method**: Chi-square test of independence
 ```{r}
 bmi_exercise_table <- table(Heart_clean$BMI_Category_Alt, Heart_clean$Exercise_Past_30_Days, useNA = "no")
@@ -375,6 +424,15 @@ From the chart, we can also observe that people who are underweight or obese hav
 ---
 
 ## Question 5: Is diabetes status associated with coronary heart disease?
+
+**Rationale:**
+
+- We are testing the association between two categorical variables (diabetes status and CHD). The chi-square test of independence is suitable.
+
+**Hypothesis:**
+
+- Null hypothesis (H0): Diabetes status and coronary heart disease are independent (no association).
+- Alternative hypothesis (H1): Diabetes status and coronary heart disease are associated (not independent).
 
 **Statistical Test:** Chi-square test (testing association between two categorical variables)
 
