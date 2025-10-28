@@ -18,11 +18,23 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 options(scientific = TRUE, digits = 3)
 ```
 
+---
+
 # Abstract
 
 This study investigates key lifestyle and health factors associated with coronary heart disease (CHD) of people within the age of 70 using a large, population-based survey dataset. Through rigorous data cleaning, evidence-based handling of missing values, and clinically guided outlier removal, the analysis ensures robust statistical inference. Exploratory data analysis is conducted using t-tests, chi-square tests, and ANOVA to examine the roles of BMI, smoking, diabetes, exercise, and general health status. The results demonstrate strong and consistent associations, indicating that higher BMI, diabetes, and smoking are linked to an increased risk of CHD, while regular exercise and better self-reported health status are associated with a lower risk. These findings emphasize the significance of modifiable lifestyle behaviors in the prevention and management of coronary heart disease.
 
----
+# Motivation for Topic Selection
+
+Coronary heart disease remains one of the leading causes of morbidity and mortality worldwide, with significant impacts on individuals, families, and healthcare systems. Our team chose this topic because understanding the factors associated with CHD is crucial for effective prevention, early detection, and management. By identifying modifiable risk factors and highlighting the importance of lifestyle choices, we aim to contribute to public health awareness and support evidence-based interventions that can reduce the burden of heart disease in our communities.
+
+# Prior Research and Analysis
+
+Extensive prior research has investigated the risk factors and determinants of coronary heart disease (CHD). Large-scale epidemiological studies, such as the [Framingham Heart Study](https://www.framinghamheartstudy.org/) and [INTERHEART](https://www.phri.ca/research/interheart/), have consistently identified age, sex, diabetes, smoking, obesity, physical inactivity, and poor self-reported health as major contributors to CHD risk. Meta-analyses and systematic reviews have further confirmed the strong associations between these modifiable and non-modifiable factors and the incidence of heart disease. The Behavioral Risk Factor Surveillance System (BRFSS) dataset has been widely used in public health research to monitor trends in cardiovascular risk factors and evaluate the effectiveness of interventions. Previous analyses using BRFSS and similar datasets have demonstrated that targeted lifestyle modifications - such as smoking cessation, increased physical activity, and weight management - can significantly reduce the burden of coronary heart disease at both individual and population levels. This study builds on this foundation by applying rigorous statistical methods to recent BRFSS data, aiming to clarify the relative importance of these factors in the current population.
+
+# Dataset Description
+
+This analysis utilizes data from the 2024 Behavioral Risk Factor Surveillance System (BRFSS), a nationwide health-related telephone survey conducted by the Centers for Disease Control and Prevention (CDC). The BRFSS collects information on health behaviors, chronic conditions, and preventive practices from a representative sample of adults across the United States. The 2024 dataset contains responses to over 300 variables, enabling comprehensive assessment of lifestyle, demographic, and clinical factors. For more details, the dataset is publicly available at [CDC BRFSS Annual Data 2024](https://www.cdc.gov/brfss/annual_data/annual_2024.html). This rich source of population-based data provides a robust foundation for investigating the determinants of coronary heart disease and other major health outcomes.
 
 # Variables Used for Analysis
 
@@ -40,7 +52,7 @@ The following variables were selected based on clinical relevance and prior rese
 - **General_Health_Status**: Self-reported general health status
 - **BMI_Value**: Calculated BMI value
 
-# Variable Selection Criteria and Rationale
+# Variable Selection Criteria
 
 These variables were chosen because they represent established risk factors or potential predictors for coronary heart disease, as supported by epidemiological studies and clinical guidelines. Including demographic (age, sex), behavioral (smoking, exercise), metabolic (BMI, diabetes), and self-reported health measures allows for a comprehensive assessment of factors influencing CHD risk. This approach ensures that the analysis captures both modifiable and non-modifiable determinants, enabling robust statistical inference and meaningful public health recommendations.
 Additionally, variable selection is also considered based on the missing percentage of each variable to ensure reliability and completeness of analysis.
@@ -115,6 +127,7 @@ kable(
 ---
 
 # Data Cleaning
+
 ## Missing Value Treatment (Imputation - Median for continuous variables)
 ```{r, results='asis'}
 rows_initial <- nrow(Heart_data)
@@ -197,6 +210,7 @@ if("BMI_Value" %in% names(Heart_clean)) {
 
 ```
 
+---
 
 # Descriptive Statistics
 ```{r, results='asis'}

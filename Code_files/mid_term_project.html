@@ -1800,6 +1800,7 @@ Nikhil, Adithya</h4>
 </div>
 
 
+<hr />
 <div id="abstract" class="section level1">
 <h1>Abstract</h1>
 <p>This study investigates key lifestyle and health factors associated
@@ -1815,7 +1816,55 @@ linked to an increased risk of CHD, while regular exercise and better
 self-reported health status are associated with a lower risk. These
 findings emphasize the significance of modifiable lifestyle behaviors in
 the prevention and management of coronary heart disease.</p>
-<hr />
+</div>
+<div id="motivation-for-topic-selection" class="section level1">
+<h1>Motivation for Topic Selection</h1>
+<p>Coronary heart disease remains one of the leading causes of morbidity
+and mortality worldwide, with significant impacts on individuals,
+families, and healthcare systems. Our team chose this topic because
+understanding the factors associated with CHD is crucial for effective
+prevention, early detection, and management. By identifying modifiable
+risk factors and highlighting the importance of lifestyle choices, we
+aim to contribute to public health awareness and support evidence-based
+interventions that can reduce the burden of heart disease in our
+communities.</p>
+</div>
+<div id="prior-research-and-analysis" class="section level1">
+<h1>Prior Research and Analysis</h1>
+<p>Extensive prior research has investigated the risk factors and
+determinants of coronary heart disease (CHD). Large-scale
+epidemiological studies, such as the <a href="https://www.framinghamheartstudy.org/">Framingham Heart Study</a>
+and <a href="https://www.phri.ca/research/interheart/">INTERHEART</a>,
+have consistently identified age, sex, diabetes, smoking, obesity,
+physical inactivity, and poor self-reported health as major contributors
+to CHD risk. Meta-analyses and systematic reviews have further confirmed
+the strong associations between these modifiable and non-modifiable
+factors and the incidence of heart disease. The Behavioral Risk Factor
+Surveillance System (BRFSS) dataset has been widely used in public
+health research to monitor trends in cardiovascular risk factors and
+evaluate the effectiveness of interventions. Previous analyses using
+BRFSS and similar datasets have demonstrated that targeted lifestyle
+modifications - such as smoking cessation, increased physical activity,
+and weight management - can significantly reduce the burden of coronary
+heart disease at both individual and population levels. This study
+builds on this foundation by applying rigorous statistical methods to
+recent BRFSS data, aiming to clarify the relative importance of these
+factors in the current population.</p>
+</div>
+<div id="dataset-description" class="section level1">
+<h1>Dataset Description</h1>
+<p>This analysis utilizes data from the 2024 Behavioral Risk Factor
+Surveillance System (BRFSS), a nationwide health-related telephone
+survey conducted by the Centers for Disease Control and Prevention
+(CDC). The BRFSS collects information on health behaviors, chronic
+conditions, and preventive practices from a representative sample of
+adults across the United States. The 2024 dataset contains responses to
+over 300 variables, enabling comprehensive assessment of lifestyle,
+demographic, and clinical factors. For more details, the dataset is
+publicly available at <a href="https://www.cdc.gov/brfss/annual_data/annual_2024.html">CDC BRFSS
+Annual Data 2024</a>. This rich source of population-based data provides
+a robust foundation for investigating the determinants of coronary heart
+disease and other major health outcomes.</p>
 </div>
 <div id="variables-used-for-analysis" class="section level1">
 <h1>Variables Used for Analysis</h1>
@@ -1841,8 +1890,8 @@ status</li>
 <li><strong>BMI_Value</strong>: Calculated BMI value</li>
 </ul>
 </div>
-<div id="variable-selection-criteria-and-rationale" class="section level1">
-<h1>Variable Selection Criteria and Rationale</h1>
+<div id="variable-selection-criteria" class="section level1">
+<h1>Variable Selection Criteria</h1>
 <p>These variables were chosen because they represent established risk
 factors or potential predictors for coronary heart disease, as supported
 by epidemiological studies and clinical guidelines. Including
@@ -2323,6 +2372,7 @@ if(&quot;BMI_Value&quot; %in% names(Heart_clean)) {
   }
 }</code></pre>
 <p>Removed 209 rows with impossible BMI values (&lt;10 or &gt;70)</p>
+<hr />
 </div>
 </div>
 <div id="descriptive-statistics" class="section level1">
