@@ -1,6 +1,9 @@
 ---
 title: "Unveiling the factors significantly associated with coronary heart disease diagnosis?"
-author: "Team Confusion Matrix Mafia : Dhanush, Heng Jui, Nikhil, Adithya"
+author: |
+  Team Confusion Matrix Mafia:
+  
+  Dhanush Mathivanan, Heng Jui Chu, Nikhilesh Dhavale, Adithya Karande
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -8,7 +11,8 @@ output:
     toc_float: true
     toc_depth: 3
     code_folding: hide 
-    theme: cerulean        
+    theme: cerulean
+    css: custom.css        
 ---
 
 ```{r setup, include=FALSE}
@@ -46,9 +50,7 @@ The following variables were selected based on clinical relevance and prior rese
 - **Smoking_Status**: Lifetime smoking status
 - **BMI_Category_Alt**: BMI category (Underweight, Normal, Overweight, Obese)
 - **Exercise_Past_30_Days**: Physical activity in the past 30 days
-- **CVD_Stroke_History**: History of cardiovascular disease or stroke
 - **Coronary_Heart_Disease**: CHD diagnosis status (outcome variable)
-- **Heart_Attack_History**: History of heart attack
 - **General_Health_Status**: Self-reported general health status
 - **BMI_Value**: Calculated BMI value
 
@@ -78,9 +80,7 @@ Heart_data$Diabetes_Status <- factor(Heart_data$Diabetes_Status, levels = c(1, 2
 Heart_data$Smoking_Status <- factor(Heart_data$Smoked_100_Cigarettes_Lifetime, levels = c(1, 2), labels = c("Yes", "No"))
 Heart_data$BMI_Category_Alt <- factor(Heart_data$BMI_Category_Alt, levels = c(1, 2, 3, 4), labels = c("Underweight", "Normal Weight", "Overweight", "Obese"))
 Heart_data$Exercise_Past_30_Days <- factor(Heart_data$Exercise_Past_30_Days, levels = c(1, 2), labels = c("Yes", "No"))
-Heart_data$CVD_Stroke_History <- factor(Heart_data$CVD_Stroke_History, levels = c(1, 2), labels = c("Yes", "No"))
 Heart_data$Coronary_Heart_Disease <- factor(Heart_data$Coronary_Heart_Disease, levels = c(1, 2), labels = c("Yes", "No"))
-Heart_data$Heart_Attack_History <- factor(Heart_data$Heart_Attack_History, levels = c(1, 2), labels = c("Yes", "No"))
 Heart_data$General_Health_Status <- factor(Heart_data$General_Health_Status, levels = c(1, 2, 3, 4, 5), labels = c("Excellent", "Very Good", "Good", "Fair", "Poor"))
 Heart_data$BMI_Value <- Heart_data$BMI_Category / 100
 
@@ -89,8 +89,8 @@ names(Heart_data)[names(Heart_data) == "Age_Group_5yr"] <- "Age"
 # Select only the 14 key variables
 selected_vars <- c(
   "Age", "Sex", "Diabetes_Status", "Smoking_Status", "BMI_Category_Alt",
-  "Exercise_Past_30_Days", "CVD_Stroke_History", "Coronary_Heart_Disease",
-  "Heart_Attack_History", "General_Health_Status", "BMI_Value"
+  "Exercise_Past_30_Days", "Coronary_Heart_Disease","General_Health_Status",
+  "BMI_Value"
 )
 Heart_data <- Heart_data[, selected_vars]
 
@@ -161,8 +161,6 @@ if("BMI_Category_Alt" %in% names(Heart_clean) && "BMI_Value" %in% names(Heart_cl
   }
 }
 ```
-
----
 
 ## Outlier Removal and Invalid Data Handling
 ```{r, results='asis'}
@@ -490,3 +488,9 @@ The results help identify important risk factors for coronary heart disease and 
 - Healthcare screening programs
 - Public health interventions 
 - Individual patient care decisions to reduce CHD incidence through lifestyle modifications.
+
+## References
+
+Tsao, C. W., & Vasan, R. S. (2015). Cohort profile: The Framingham Heart Study (FHS): Overview of milestones in cardiovascular epidemiology. *International Journal of Epidemiology*, *44*(6), 1800–1813. https://doi.org/10.1093/ije/dyv337
+
+Yusuf, S., Hawken, S., Ounpuu, S., Dans, T., Avezum, A., Lanas, F., McQueen, M., Budaj, A., Pais, P., Varigos, J., Liu, L., & INTERHEART Study Investigators. (2004). Effect of potentially modifiable risk factors associated with myocardial infarction in 52 countries (the INTERHEART study): Case-control study. *The Lancet*, *364*(9438), 937–952. https://doi.org/10.1016/S0140-6736(04)17018-9
