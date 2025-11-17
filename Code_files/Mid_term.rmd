@@ -516,10 +516,11 @@ str(Heart_clean[, c("Coronary_Heart_Disease",
 ```{r}
 library(pscl)    
 logit_1 <- glm(
-  Coronary_Heart_Disease ~ Age + Sex + Smoking_Status + 
-    Diabetes_Status + Exercise_Past_30_Days  + General_Health_Status,
+  Coronary_Heart_Disease ~ Age + Sex + Smoking_Status + Diabetes_Status +
+    Exercise_Past_30_Days + General_Health_Status,
   data = Heart_clean,
-  family = binomial
+  family = binomial,
+  weights = ifelse(Heart_clean$Coronary_Heart_Disease == "Yes", 20, 1)
 )
 
 summary(logit_1)
@@ -527,26 +528,137 @@ summary(logit_1)
 pR2(logit_1)
 ```
 
+
+
 # accuracy precision recall f1_score
 ```{r}
 Heart_clean$pred_prob <- predict(logit_1, type = "response")
-Heart_clean$pred_class <- ifelse(Heart_clean$pred_prob >= 0.5, "Yes", "No")
+Heart_clean$pred_class <- ifelse(Heart_clean$pred_prob >= 0.005, "Yes", "No")
 Heart_clean$pred_class <- factor(Heart_clean$pred_class, levels = c("No","Yes"))
 
-conf_table <- table(Actual = Heart_clean$Coronary_Heart_Disease,
+Logistic_conf_table <- table(Actual = Heart_clean$Coronary_Heart_Disease,
                     Predicted = Heart_clean$pred_class)
 
-xkabledply(conf_table, title = "Confusion Matrix from CHD Logistic Regression Model")
+xkabledply(Logistic_conf_table, title = "Confusion Matrix from CHD Logistic Regression Model")
 
-TN <- conf_table[1,1]
-FP <- conf_table[1,2]
-FN <- conf_table[2,1]
-TP <- conf_table[2,2]
+Logistic_TN <- Logistic_conf_table[1,1]
+Logistic_FP <- Logistic_conf_table[1,2]
+Logistic_FN <- Logistic_conf_table[2,1]
+Logistic_TP <- Logistic_conf_table[2,2]
 
-accuracy  <- (TP + TN) / (TP + TN + FP + FN)
-precision <- TP / (TP + FP)
-recall    <- TP / (TP + FN)
+accuracy  <- (Logistic_TP + Logistic_TN) / (Logistic_TP + Logistic_TN + Logistic_FP + Logistic_FN)
+precision <- Logistic_TP / (Logistic_TP + Logistic_FP)
+recall    <- Logistic_TP / (Logistic_TP + Logistic_FN)
 f1_score  <- 2 * precision * recall / (precision + recall)
 
 data.frame(accuracy, precision, recall, f1_score)
+```
+
+# accuracy precision recall f1_score (Cut off way!)
+```{r}
+library(pROC)
+
+roc_obj <- roc(Heart_clean$Coronary_Heart_Disease, Heart_clean$pred_prob)
+coords(roc_obj, "best", ret = c("threshold", "sensitivity", "specificity"))
+
+cutoff <- as.numeric(coords(roc_obj, "best", ret = "threshold"))
+
+Heart_clean$pred_class <- ifelse(Heart_clean$pred_prob >= cutoff, "Yes", "No")
+Heart_clean$pred_class <- factor(Heart_clean$pred_class, levels = c("No","Yes"))
+
+Logistic_conf_table <- table(Actual = Heart_clean$Coronary_Heart_Disease,
+      Predicted = Heart_clean$pred_class)
+
+
+xkabledply(Logistic_conf_table, title = "Confusion Matrix from CHD Logistic Regression Model")
+
+Logistic_TN <- Logistic_conf_table[1,1]
+Logistic_FP <- Logistic_conf_table[1,2]
+Logistic_FN <- Logistic_conf_table[2,1]
+Logistic_TP <- Logistic_conf_table[2,2]
+
+accuracy  <- (Logistic_TP + Logistic_TN) / (Logistic_TP + Logistic_TN + Logistic_FP + Logistic_FN)
+precision <- Logistic_TP / (Logistic_TP + Logistic_FP)
+recall    <- Logistic_TP / (Logistic_TP + Logistic_FN)
+f1_score  <- 2 * precision * recall / (precision + recall)
+
+data.frame(accuracy, precision, recall, f1_score)
+```
+
+```{r}
+cm_df <- as.data.frame(Logistic_conf_table)
+
+ggplot(cm_df, aes(Predicted, Actual, fill = Freq)) +
+  geom_tile() +
+  geom_text(aes(label = Freq), color = "white", size = 6) +
+  scale_fill_gradient(low = "skyblue", high = "darkblue") +
+  labs(
+    title = "Confusion Matrix of Logistic Regression",
+    x = "Predicted Class",
+    y = "Actual Class") +
+  theme_minimal()
+```
+
+# Category Tree
+```{r}
+library(rpart)
+
+set.seed(1)
+
+tree_chd <- rpart(
+  Coronary_Heart_Disease ~ Age + Sex + Smoking_Status + Diabetes_Status +
+    Exercise_Past_30_Days + General_Health_Status,
+  data = Heart_clean,
+  method = "class",
+  parms = list(prior = c(0.5, 0.5)),
+  control = rpart.control(cp = 0.0001, minbucket = 1000)
+)
+
+pred_tree <- predict(tree_chd, type = "class")
+
+tree_conf_table <- table(
+  Actual = Heart_clean$Coronary_Heart_Disease,
+  Predicted = pred_tree
+)
+
+tree_TN <- tree_conf_table[1,1]
+tree_FP <- tree_conf_table[1,2]
+tree_FN <- tree_conf_table[2,1]
+tree_TP <- tree_conf_table[2,2]
+
+accuracy  <- (tree_TP + tree_TN) / (tree_TP + tree_TN + tree_FP + tree_FN)
+precision <- tree_TP / (tree_TP + tree_FP)
+recall    <- tree_TP / (tree_TP + tree_FN)
+f1_score  <- 2 * precision * recall / (precision + recall)
+
+data.frame(accuracy, precision, recall, f1_score)
+
+```
+
+
+Logistic regression performs better because it captures smooth, continuous relationships in the data.
+
+The classification tree performs worse because it uses hard splits and tends to underfit when the dataset is highly imbalanced.                                                                                                                                                                                                                                                                                                                                                                          
+```{r}
+library(rpart.plot)
+
+rpart.plot(
+  tree_chd,
+  type = 2,
+  extra = 104,
+  fallen.leaves = TRUE,
+  cex = 0.7,
+  main = "Category Tree for CHD")
+
+
+library(ggplot2)
+
+cm_df <- as.data.frame(tree_conf_table)
+
+ggplot(cm_df, aes(Predicted, Actual, fill = Freq)) +
+  geom_tile() +
+  geom_text(aes(label = Freq), color = "white") +
+  scale_fill_gradient(low = "skyblue", high = "darkblue") +
+  labs(title = "Confusion Matrix of Category Tree") +
+  theme_minimal()
 ```
