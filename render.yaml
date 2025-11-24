@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: chd-prediction-api
+    env: docker
+    dockerfilePath: ./api/Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000
