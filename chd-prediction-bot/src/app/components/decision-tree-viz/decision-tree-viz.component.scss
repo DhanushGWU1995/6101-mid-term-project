@@ -1,0 +1,36 @@
+/* Styles specific to the decision tree visualization component */
+
+.decision-tree-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px;
+}
+
+.decision-tree {
+    width: 100%;
+    max-width: 800px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #f9f9f9;
+}
+
+.tree-node {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.tree-node:last-child {
+    border-bottom: none;
+}
+
+.tree-node-title {
+    font-weight: bold;
+    color: #333;
+}
+
+.tree-node-content {
+    margin-left: 20px;
+    color: #666;
+}

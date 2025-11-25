@@ -1,0 +1,105 @@
+<div class="genie-container">
+  <!-- Side Panel with Selected Options -->
+  <div class="side-panel">
+    <h3>📋 Your Answers</h3>
+    <div class="answers-list">
+      <div class="answer-item" *ngFor="let question of questions; let i = index" 
+           [class.completed]="getSelectedValue(question.field)"
+           [class.current]="i === currentStep && !showResult">
+        <div class="answer-icon">{{ question.icon }}</div>
+        <div class="answer-content">
+          <div class="answer-question">{{ question.question }}</div>
+          <div class="answer-value" *ngIf="getSelectedValue(question.field)">
+            ✓ {{ getOptionLabel(question.field, getSelectedValue(question.field)) }}
+          </div>
+          <div class="answer-value pending" *ngIf="!getSelectedValue(question.field)">
+            <span *ngIf="i === currentStep && !showResult">⏳ Answering...</span>
+            <span *ngIf="i > currentStep || showResult">⏸️ Pending</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-container">
+      <div class="progress-label">Progress: {{ currentStep + 1 }} / {{ totalSteps }}</div>
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="((currentStep + 1) / totalSteps) * 100"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Question Area -->
+  <div class="main-content">
+    <div class="question-container" *ngIf="!showResult">
+      <div class="genie-header">
+        <h2>🔮 CHD Prediction Genie</h2>
+        <p class="step-indicator">Question {{ currentStep + 1 }} of {{ totalSteps }}</p>
+      </div>
+
+      <div class="question-card" [@slideIn]>
+        <div class="question-icon">{{ questions[currentStep].icon }}</div>
+        <h3 class="question-text">{{ questions[currentStep].question }}</h3>
+        
+        <!-- Regular Options Grid -->
+        <div class="options-grid" *ngIf="questions[currentStep].type !== 'slider'" [class.two-columns]="questions[currentStep].options.length === 2">
+          <button 
+            *ngFor="let option of questions[currentStep].options" 
+            class="option-button"
+            [class.selected]="getSelectedValue(questions[currentStep].field) === option.value"
+            (click)="selectOption(option.value)">
+            {{ option.label }}
+          </button>
+        </div>
+        
+        <!-- BMI Slider -->
+        <div class="slider-container" *ngIf="questions[currentStep].type === 'slider'">
+          <div class="bmi-value-display">
+            <span class="bmi-label">Current BMI:</span>
+            <span class="bmi-value">{{ patientData.bmiValue }}</span>
+          </div>
+          <input 
+            type="range" 
+            class="bmi-slider"
+            [min]="questions[currentStep].min"
+            [max]="questions[currentStep].max"
+            [step]="questions[currentStep].step"
+            [(ngModel)]="patientData.bmiValue"
+            (input)="onSliderChange(patientData.bmiValue)">
+          <div class="slider-labels">
+            <span>{{ questions[currentStep].min }}</span>
+            <span class="bmi-category">{{ getBMICategory(patientData.bmiValue) }}</span>
+            <span>{{ questions[currentStep].max }}</span>
+          </div>
+          <button class="submit-bmi-button" (click)="submitBMI()">
+            Continue →
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Buttons -->
+      <div class="navigation-buttons">
+        <button class="nav-button back" (click)="goBack()" *ngIf="currentStep > 0">
+          ← Back
+        </button>
+        <button class="nav-button restart" (click)="restart()">
+          🔄 Restart
+        </button>
+      </div>
+    </div>
+
+    <!-- Results Display -->
+    <div class="results-container" *ngIf="showResult && predictionResult">
+      <app-result-display [predictionResult]="predictionResult"></app-result-display>
+      
+      <div class="action-buttons">
+        <button class="action-button secondary" (click)="changeAnswers()">
+          ← Change Answers
+        </button>
+        <button class="action-button primary" (click)="restart()">
+          🔄 Start New Prediction
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
