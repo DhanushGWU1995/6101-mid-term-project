@@ -494,204 +494,143 @@ The results help identify important risk factors for coronary heart disease and 
 ## New Smart Question 
 # How do Age, Sex, Smoking_Status, Diabetes_Status, Exercise_Past_30_Days, and General_Health_Status affect the likelihood of having Coronary_Heart_Disease?
 
-# Description
+# Exploratory Data Analysis
 ```{r}
-summary(Heart_clean[, c("Coronary_Heart_Disease",
-                    "BMI_Value",
-                    "General_Health_Status",
-                    "Exercise_Past_30_Days",
-                    "Diabetes_Status",
-                    "Smoking_Status",
-                    "BMI_Category_Alt")])
-str(Heart_clean[, c("Coronary_Heart_Disease",
-                    "BMI_Value",
-                    "General_Health_Status",
-                    "Exercise_Past_30_Days",
-                    "Diabetes_Status",
-                    "Smoking_Status",
-                    "BMI_Category_Alt")])
-```
+# Display summary statistics for key variables
+summary(Heart_clean[, c("Coronary_Heart_Disease", "Age", "Sex", "Smoking_Status", 
+                       "Diabetes_Status", "Exercise_Past_30_Days", "General_Health_Status")])
 
-# Logistic Regression Model
-
-**Rationale:**  
-Logistic regression is appropriate for modeling a binary outcome (CHD: Yes/No) as a function of multiple predictors. We use class weights to address the imbalanced distribution of CHD cases.
-
-**Hypothesis:**  
-- Null hypothesis (H0): None of the predictors are associated with CHD.
-- Alternative hypothesis (H1): At least one predictor is significantly associated with CHD.
-
-```{r}
-library(pscl)    
-logit_1 <- glm(
-  Coronary_Heart_Disease ~ Age + Sex + Smoking_Status + Diabetes_Status +
-    Exercise_Past_30_Days + General_Health_Status,
-  data = Heart_clean,
-  family = binomial,
-  weights = ifelse(Heart_clean$Coronary_Heart_Disease == "Yes", 20, 1)
-)
-
-summary(logit_1)
-
-# McFadden's Pseudo R-squared
-pR2(logit_1)
-```
-
-*The logistic regression model shows that Age, Sex, Smoking_Status, Diabetes_Status, Exercise_Past_30_Days, and General_Health_Status are significant predictors of coronary heart disease. The model uses class weights (20:1) to address the imbalanced nature of the outcome variable.*
-
----
-
-# Model Evaluation - ROC-based Optimal Cutoff (RECOMMENDED)
-
-**Method:** We use ROC curve analysis to determine the optimal probability cutoff that maximizes sensitivity and specificity.
-
-```{r}
-library(pROC)
-
-# Generate predicted probabilities
-Heart_clean$pred_prob <- predict(logit_1, type = "response")
-
-# ROC analysis
-roc_obj <- roc(Heart_clean$Coronary_Heart_Disease, Heart_clean$pred_prob)
-coords(roc_obj, "best", ret = c("threshold", "sensitivity", "specificity"))
-
-# Extract optimal cutoff
-cutoff <- as.numeric(coords(roc_obj, "best", ret = "threshold"))
-cat(sprintf("\nOptimal cutoff selected by ROC: %.4f\n", cutoff))
-
-# Apply optimal cutoff
-Heart_clean$pred_class <- ifelse(Heart_clean$pred_prob >= cutoff, "Yes", "No")
-Heart_clean$pred_class <- factor(Heart_clean$pred_class, levels = c("No","Yes"))
-
-# Confusion matrix
-Logistic_conf_table <- table(Actual = Heart_clean$Coronary_Heart_Disease,
-                              Predicted = Heart_clean$pred_class)
-
-xkabledply(Logistic_conf_table, title = "Confusion Matrix from CHD Logistic Regression Model (ROC-based Cutoff)")
-
-# Calculate metrics
-Logistic_TN <- Logistic_conf_table[1,1]
-Logistic_FP <- Logistic_conf_table[1,2]
-Logistic_FN <- Logistic_conf_table[2,1]
-Logistic_TP <- Logistic_conf_table[2,2]
-
-accuracy  <- (Logistic_TP + Logistic_TN) / (Logistic_TP + Logistic_TN + Logistic_FP + Logistic_FN)
-precision <- Logistic_TP / (Logistic_TP + Logistic_FP)
-recall    <- Logistic_TP / (Logistic_TP + Logistic_FN)
-f1_score  <- 2 * precision * recall / (precision + recall)
-
-metrics_df <- data.frame(
-  Metric = c("Accuracy", "Precision", "Recall", "F1-Score"),
-  Value = round(c(accuracy, precision, recall, f1_score), 4)
-)
-
-kable(metrics_df, caption = "Logistic Regression Performance Metrics", align = 'c') %>%
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
-```
-
-*Using the ROC-based optimal cutoff (threshold), the logistic regression model achieves balanced performance across accuracy, precision, recall, and F1-score metrics.*
-
----
-
-# Confusion Matrix Visualization
-
-```{r}
-cm_df <- as.data.frame(Logistic_conf_table)
-cm_df$Actual <- factor(cm_df$Actual, levels = c("Yes", "No"))
-cm_df$Predicted <- factor(cm_df$Predicted, levels = c("Yes", "No"))
-
-ggplot(cm_df, aes(Predicted, Actual, fill = Freq)) +
-  geom_tile() +
-  geom_text(aes(label = Freq), color = "white", size = 6) +
-  scale_fill_gradient(low = "skyblue", high = "darkblue") +
-  labs(
-    title = "Confusion Matrix of Logistic Regression",
-    subtitle = paste("Cutoff:", round(cutoff, 4)),
-    x = "Predicted Class",
-    y = "Actual Class") +
-  theme_minimal()
+# Check class distribution
+chd_distribution <- table(Heart_clean$Coronary_Heart_Disease)
+print("Coronary Heart Disease Distribution:")
+print(chd_distribution)
+cat("Imbalance ratio (No:Yes):", round(chd_distribution["No"]/chd_distribution["Yes"], 1), ":1\n")
 ```
 
 ---
 
-# Classification Tree Model
-
-**Rationale:**  
-Decision trees provide an interpretable alternative to logistic regression. We use prior probabilities of 0.5/0.5 to address class imbalance.
+# Data Splitting and Preparation
 
 ```{r}
+library(caret)
 library(rpart)
 library(rpart.plot)
 
-set.seed(1)
+set.seed(123)  # For reproducibility
 
-tree_chd <- rpart(
-  Coronary_Heart_Disease ~ Age + Sex + Smoking_Status + Diabetes_Status +
-    Exercise_Past_30_Days + General_Health_Status,
-  data = Heart_clean,
-  method = "class",
-  parms = list(prior = c(0.5, 0.5)),
-  control = rpart.control(cp = 0.0001, minbucket = 1000)
-)
+# Create stratified train/test split (80/20)
+train_index <- createDataPartition(Heart_clean$Coronary_Heart_Disease, p = 0.8, list = FALSE)
+train_data <- Heart_clean[train_index, ]
+test_data <- Heart_clean[-train_index, ]
 
-# Predictions
-pred_tree <- predict(tree_chd, type = "class")
+cat("Training set size:", nrow(train_data), "\n")
+cat("Test set size:", nrow(test_data), "\n")
 
-# Confusion matrix
-tree_conf_table <- table(
-  Actual = Heart_clean$Coronary_Heart_Disease,
-  Predicted = pred_tree
-)
+# Check class distribution in training data
+train_class_dist <- table(train_data$Coronary_Heart_Disease)
+print("Training data class distribution:")
+print(train_class_dist)
 
-xkabledply(tree_conf_table, title = "Confusion Matrix from CHD Classification Tree")
-
-# Calculate metrics
-tree_TN <- tree_conf_table[1,1]
-tree_FP <- tree_conf_table[1,2]
-tree_FN <- tree_conf_table[2,1]
-tree_TP <- tree_conf_table[2,2]
-
-accuracy  <- (tree_TP + tree_TN) / (tree_TP + tree_TN + tree_FP + tree_FN)
-precision <- tree_TP / (tree_TP + tree_FP)
-recall    <- tree_TP / (tree_TP + tree_FN)
-f1_score  <- 2 * precision * recall / (precision + recall)
-
-tree_metrics_df <- data.frame(
-  Metric = c("Accuracy", "Precision", "Recall", "F1-Score"),
-  Value = round(c(accuracy, precision, recall, f1_score), 4)
-)
-
-kable(tree_metrics_df, caption = "Classification Tree Performance Metrics", align = 'c') %>%
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+# Print the overall CHD Yes count in training data
+cat("Overall CHD Yes count in training data:", train_class_dist["Yes"], "\n")
 ```
 
 ---
 
-# Tree Visualization
+# Predictor Selection and Justification
+
+## Statistical Tests for Predictor Selection
+
+**Rationale:**  
+Before building the Random Forest model, we perform statistical tests to justify the selection of predictors. For categorical variables, we use chi-square tests to assess their association with coronary heart disease. For continuous variables (Age groups treated as ordinal, BMI_Value), we use t-tests or Mann-Whitney U tests to compare distributions between CHD groups.
 
 ```{r}
-rpart.plot(
-  tree_chd,
-  type = 2,
-  extra = 104,
-  fallen.leaves = TRUE,
-  cex = 0.7,
-  main = "Classification Tree for Coronary Heart Disease")
+library(dplyr)
+library(kableExtra)
 
-# Confusion matrix heatmap
-cm_tree_df <- as.data.frame(tree_conf_table)
+# === Tests for Categorical Predictors ===
+cat("=== Chi-Square Tests for Categorical Predictors ===\n\n")
 
-ggplot(cm_tree_df, aes(Predicted, Actual, fill = Freq)) +
-  geom_tile() +
-  geom_text(aes(label = Freq), color = "white", size = 6) +
-  scale_fill_gradient(low = "skyblue", high = "darkblue") +
-  labs(title = "Confusion Matrix of Classification Tree",
-       x = "Predicted Class",
-       y = "Actual Class") +
-  theme_minimal()
+categorical_predictors <- c("Sex", "Smoking_Status", "Diabetes_Status", 
+                            "Exercise_Past_30_Days", "General_Health_Status")
+
+chi_results <- data.frame(
+  Predictor = character(),
+  Chi_Square = numeric(),
+  P_Value = character(),
+  Significant = character(),
+  stringsAsFactors = FALSE
+)
+
+for(pred in categorical_predictors) {
+  test_table <- table(Heart_clean[[pred]], Heart_clean$Coronary_Heart_Disease)
+  chi_test <- chisq.test(test_table)
+  
+  chi_results <- rbind(chi_results, data.frame(
+    Predictor = pred,
+    Chi_Square = round(chi_test$statistic, 2),
+    P_Value = ifelse(chi_test$p.value < 0.001, "< 0.001", 
+                     sprintf("%.4f", chi_test$p.value)),
+    Significant = ifelse(chi_test$p.value < 0.05, "Yes ***", "No"),
+    stringsAsFactors = FALSE
+  ))
+}
+
+kable(chi_results, 
+      caption = "Chi-Square Test Results: Categorical Predictors vs CHD",
+      align = 'c') %>%
+  kable_styling(bootstrap_options = c("striped", "bordered", "hover"), 
+                full_width = FALSE)
+
+# === Test for Age (Ordinal/Categorical) ===
+cat("\n=== Chi-Square Test for Age Groups ===\n\n")
+
+age_table <- table(Heart_clean$Age, Heart_clean$Coronary_Heart_Disease)
+age_chi_test <- chisq.test(age_table)
+
+age_result <- data.frame(
+  Predictor = "Age",
+  Chi_Square = round(as.numeric(age_chi_test$statistic), 2),
+  P_Value = ifelse(age_chi_test$p.value < 0.001, "< 0.001", 
+                   sprintf("%.4f", age_chi_test$p.value)),
+  Significant = ifelse(age_chi_test$p.value < 0.05, "Yes ***", "No"),
+  stringsAsFactors = FALSE
+)
+
+kable(age_result,
+      caption = "Chi-Square Test: Age Groups vs CHD",
+      align = 'c',
+      row.names = FALSE) %>%
+  kable_styling(bootstrap_options = c("striped", "bordered", "hover"), 
+                full_width = FALSE)
+
+# === Test for BMI_Value (Continuous) ===
+cat("\n=== T-Test for BMI_Value (Continuous Variable) ===\n\n")
+
+bmi_test <- t.test(BMI_Value ~ Coronary_Heart_Disease, data = Heart_clean)
+
+bmi_result <- data.frame(
+  Predictor = "BMI_Value",
+  Test = "Independent T-Test",
+  T_Statistic = round(bmi_test$statistic, 3),
+  P_Value = ifelse(bmi_test$p.value < 0.001, "< 0.001", 
+                   sprintf("%.4f", bmi_test$p.value)),
+  Mean_No_CHD = round(bmi_test$estimate[1], 2),
+  Mean_Yes_CHD = round(bmi_test$estimate[2], 2),
+  Significant = ifelse(bmi_test$p.value < 0.05, "Yes ***", "No")
+)
+
+kable(bmi_result,
+      caption = "T-Test: BMI_Value vs CHD",
+      align = 'c') %>%
+  kable_styling(bootstrap_options = c("striped", "bordered", "hover"), 
+                full_width = FALSE)
+
+cat("\nInterpretation: Mean BMI for No CHD =", round(bmi_test$estimate[1], 2),
+    "| Mean BMI for Yes CHD =", round(bmi_test$estimate[2], 2), "\n")
 ```
 
-------------
+---
 
 # Random Forest Model
 ```{r}
@@ -700,7 +639,7 @@ library(caret)
 library(ranger)
 library(pROC)
 
-# Select the key predictors
+# Select the key predictors (justified by statistical tests above)
 rf_df <- Heart_clean %>%
   select(Coronary_Heart_Disease, Age, Sex, Smoking_Status, Diabetes_Status,
          Exercise_Past_30_Days, General_Health_Status, BMI_Value) %>%
@@ -721,12 +660,19 @@ test_rf  <- rf_df[-train_index, ]
 
 # Train RF
 set.seed(123)
-rf_orig <- ranger(formula = Coronary_Heart_Disease ~ ., data = train_rf, num.trees = 500, mtry = floor(sqrt(ncol(train_rf) - 1)), importance = "impurity", probability = TRUE)
+rf_orig <- ranger(
+  formula = Coronary_Heart_Disease ~ .,
+  data = train_rf,
+  num.trees = 500,
+  mtry = floor(sqrt(ncol(train_rf) - 1)),
+  importance = "permutation",
+  min.node.size = 10,
+  probability = TRUE
+)
 
 rf_orig
 ```
-
-
+---
 
 # Random Forest Model evaluation 
 ```{r}
@@ -767,17 +713,31 @@ print(metrics_df)
 cat("AUC:", round(as.numeric(auc(roc_obj_rf)), 4), "\n")
 
 ```
+```{r}
+# --- ROC Curve Visualization ---
+library(ggplot2)
 
+# Plot ROC curve
 
+# Plot ROC curve with custom axis labels
+plot(roc_obj_rf, col = "#1c61b6", lwd = 3, main = "Random Forest ROC Curve",
+  xlab = "False Positive Rate", ylab = "True Positive Rate")
+abline(a = 0, b = 1, lty = 2, col = "gray")
 
+# --- Variable Importance Plot ---
+# Extract and prepare importance
+var_imp <- as.data.frame(rf_orig$variable.importance)
+var_imp$Variable <- rownames(var_imp)
+colnames(var_imp)[1] <- "Importance"
+var_imp <- var_imp[order(var_imp$Importance, decreasing = TRUE), ]
 
-# Model Comparison and Interpretation
+# Plot variable importance
+ggplot(var_imp, aes(x = reorder(Variable, Importance), y = Importance)) +
+  geom_col(fill = "#249bd3") +
+  coord_flip() +
+  labs(title = "Random Forest Variable Importance",
+       x = "Variable", y = "Importance (Permutation)") +
+  theme_minimal()
+```
 
-**Logistic Regression vs. Classification Tree:**
-
-- **Logistic regression** captures smooth, continuous relationships between predictors and the outcome, making it well-suited for modeling the probability of CHD based on multiple risk factors. It performs well on imbalanced datasets when combined with class weights or optimal cutoff selection.
-
-- **Classification trees** use hard decision boundaries and may underfit when the dataset is highly imbalanced, even with prior adjustments. However, they offer greater interpretability through visual representation of decision rules.
-
-**Conclusion:**  
-In this analysis, logistic regression demonstrates superior performance in terms of accuracy, precision, recall, and F1-score compared to the classification tree. The use of ROC-based optimal cutoff further enhances the model's ability to balance sensitivity and specificity.
+---
