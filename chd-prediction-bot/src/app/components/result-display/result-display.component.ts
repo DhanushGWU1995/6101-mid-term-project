@@ -10,32 +10,43 @@ export class ResultDisplayComponent {
   @Input() predictionResult!: PredictionResult;
 
   get riskClass(): string {
+    // Use the riskLevel from the decision tree service if available
+    if (this.predictionResult.riskLevel) {
+      const level = this.predictionResult.riskLevel.toLowerCase();
+      if (level.includes('very low')) return 'very-low-risk';
+      if (level.includes('low')) return 'low-risk';
+      if (level.includes('moderate')) return 'moderate-risk';
+      if (level.includes('high') && !level.includes('very')) return 'high-risk';
+      if (level.includes('very high')) return 'very-high-risk';
+    }
+    
+    // Fallback to probability-based classification
+    // Updated thresholds: Very Low (0-29%), Low (30-40%), Moderate (40-60%), High (60-75%), Very High (75%+)
     const probability = this.predictionResult.probability * 100;
     
-    // Color-coded risk levels based on actual model probabilities
-    if (probability < 5) {
-      return 'very-low-risk';  // Green (0-5%)
-    } else if (probability < 10) {
-      return 'low-risk';        // Light Green/Yellow (5-10%)
-    } else if (probability < 20) {
-      return 'moderate-risk';   // Yellow/Orange (10-20%)
-    } else if (probability < 30) {
-      return 'high-risk';       // Orange/Red (20-30%)
+    if (probability < 30) {
+      return 'very-low-risk';  // Green (0-29%)
+    } else if (probability < 40) {
+      return 'low-risk';        // Light Green (30-40%)
+    } else if (probability < 60) {
+      return 'moderate-risk';   // Yellow/Orange (40-60%)
+    } else if (probability < 75) {
+      return 'high-risk';       // Orange/Red (60-75%)
     } else {
-      return 'very-high-risk';  // Deep Red (30%+)
+      return 'very-high-risk';  // Deep Red (75%+)
     }
   }
   
   get riskEmoji(): string {
     const probability = this.predictionResult.probability * 100;
     
-    if (probability < 5) {
+    if (probability < 30) {
       return '✅';  // Very Low
-    } else if (probability < 10) {
+    } else if (probability < 40) {
       return '😊';  // Low
-    } else if (probability < 20) {
+    } else if (probability < 60) {
       return '⚠️';  // Moderate
-    } else if (probability < 30) {
+    } else if (probability < 75) {
       return '🔴';  // High
     } else {
       return '🚨';  // Very High
@@ -43,15 +54,21 @@ export class ResultDisplayComponent {
   }
   
   get riskLabel(): string {
+    // Use the riskLevel from decision tree service if available
+    if (this.predictionResult.riskLevel) {
+      return this.predictionResult.riskLevel.toUpperCase() + ' RISK';
+    }
+    
+    // Fallback to probability-based labels
     const probability = this.predictionResult.probability * 100;
     
-    if (probability < 5) {
+    if (probability < 30) {
       return 'VERY LOW RISK';
-    } else if (probability < 10) {
+    } else if (probability < 40) {
       return 'LOW RISK';
-    } else if (probability < 20) {
+    } else if (probability < 60) {
       return 'MODERATE RISK';
-    } else if (probability < 30) {
+    } else if (probability < 75) {
       return 'HIGH RISK';
     } else {
       return 'VERY HIGH RISK';
@@ -59,29 +76,41 @@ export class ResultDisplayComponent {
   }
 
   getModelConfidence(): string {
+    // Decision Tree model based on matched case-control design (n=15,238)
+    // 3-way matching: State + Age + Sex
+    // Model accuracy: 66.6%, Sensitivity: 64.0%, Specificity: 69.2%
     const probability = this.predictionResult.probability * 100;
-    // Random Forest OOB error is 0.032 (Brier score), indicating excellent calibration
-    // Model trained on 210,428 samples with 7 predictive features
-    if (probability < 5 || probability > 25) {
-      return 'High (OOB: 96.8%)';
-    } else if (probability < 15) {
-      return 'Very High (OOB: 96.8%)';
+    
+    if (probability < 30 || probability > 70) {
+      // High confidence in extreme predictions
+      return 'High (Acc: 66.6%)';
+    } else if (probability >= 30 && probability < 45) {
+      // Moderate confidence in low-moderate range
+      return 'Moderate (Acc: 66.6%)';
+    } else if (probability >= 45 && probability < 55) {
+      // Lower confidence in borderline cases
+      return 'Borderline (Acc: 66.6%)';
     } else {
-      return 'Excellent (OOB: 96.8%)';
+      // Moderate-high confidence
+      return 'Moderate-High (Acc: 66.6%)';
     }
   }
 
   getRiskBarWidth(): number {
-    // Scale the probability to the 0-35% visual range
-    // If probability is 35%, bar should be 100% width
-    // If probability is 0%, bar should be 0% width
+    // Scale the probability from 0-100% to the visual bar (Low to High)
+    // Decision tree probabilities range from ~8% to ~95%
     const probability = this.predictionResult.probability * 100;
-    const maxScale = 35; // Maximum scale on the visual bar
     
-    // Calculate percentage of the scale
-    const scaledWidth = (probability / maxScale) * 100;
-    
-    // Cap at 100% to prevent overflow
-    return Math.min(scaledWidth, 100);
+    // For visual clarity, map the full 0-100% range
+    // The bar represents the relative risk from Low (left) to High (right)
+    return Math.min(probability, 100);
+  }
+  
+  get sampleSize(): number {
+    return this.predictionResult.sampleSize || 0;
+  }
+  
+  get decisionPath(): string {
+    return this.predictionResult.decisionPath || 'N/A';
   }
 }

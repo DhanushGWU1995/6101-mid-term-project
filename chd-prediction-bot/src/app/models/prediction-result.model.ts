@@ -3,4 +3,6 @@ export interface PredictionResult {
   probability: number;
   message: string;
   riskLevel?: string;
+  decisionPath?: string;
+  sampleSize?: number;
 }

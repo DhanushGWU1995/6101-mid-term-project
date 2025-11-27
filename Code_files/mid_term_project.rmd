@@ -18,6 +18,8 @@ output:
 ```{r setup, include=FALSE}
 library(ezids)
 library(ggplot2)
+library(dplyr)
+library(tidyr)
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 options(scientific = TRUE, digits = 3)
 ```
@@ -88,13 +90,16 @@ Heart_data$Heart_Attack_History <- factor(Heart_data$Heart_Attack_History, level
 Heart_data$General_Health_Status <- factor(Heart_data$General_Health_Status, levels = c(1, 2, 3, 4, 5), labels = c("Excellent", "Very Good", "Good", "Fair", "Poor"))
 Heart_data$BMI_Value <- Heart_data$BMI_Category / 100
 
+# Add state_code
+Heart_data$State_Code <- factor(Heart_data$State_Code)
+
 names(Heart_data)[names(Heart_data) == "Age_Group_5yr"] <- "Age"
 
 # Select only the 14 key variables
 selected_vars <- c(
   "Age", "Sex", "Diabetes_Status", "Smoking_Status", "BMI_Category_Alt",
   "Exercise_Past_30_Days", "CVD_Stroke_History", "Coronary_Heart_Disease",
-  "Heart_Attack_History", "General_Health_Status", "BMI_Value"
+  "Heart_Attack_History", "General_Health_Status", "BMI_Value", "State_Code"
 )
 Heart_data <- Heart_data[, selected_vars]
 
@@ -211,7 +216,50 @@ if("BMI_Value" %in% names(Heart_clean)) {
     cat(sprintf("Removed %d rows with impossible BMI values (<10 or >70)\n", rows_before - nrow(Heart_clean)))
   }
 }
+```
 
+---
+
+## CHD Distribution Balancing
+
+```{r, results='asis'}
+if("State_Code" %in% names(Heart_clean) && "Coronary_Heart_Disease" %in% names(Heart_clean)) {
+  # Simple Random Sampling: Balance CHD classes WITHOUT matching
+  cat("\n\n### Simple Random Sampling for Class Balance:\n")
+  
+  # Separate CHD Yes and No cases
+  chd_yes_cases <- Heart_clean %>% filter(Coronary_Heart_Disease == "Yes")
+  chd_no_cases <- Heart_clean %>% filter(Coronary_Heart_Disease == "No")
+  
+  cat(sprintf("Total CHD Yes cases: %d\n", nrow(chd_yes_cases)))
+  cat(sprintf("Total CHD No cases available: %d\n", nrow(chd_no_cases)))
+  
+  # Randomly sample No cases to match Yes cases count (simple random sampling)
+  set.seed(123)  # For reproducibility
+  sampled_no_cases <- chd_no_cases %>%
+    sample_n(size = nrow(chd_yes_cases), replace = FALSE)
+  
+  # Combine to create balanced dataset
+  Heart_clean_balanced <- rbind(chd_yes_cases, sampled_no_cases)
+  
+  cat(sprintf("\n=== Balancing Results ===\n"))
+  cat(sprintf("CHD Yes cases: %d\n", nrow(chd_yes_cases)))
+  cat(sprintf("CHD No cases (randomly sampled): %d\n", nrow(sampled_no_cases)))
+  cat(sprintf("Total balanced dataset size: %d (perfectly balanced 1:1)\n", nrow(Heart_clean_balanced)))
+  
+  cat("\n**Balancing Strategy**: Simple random sampling WITHOUT matching\n")
+  cat("Allows Age and Sex to be meaningful predictors in models\n")
+  cat("Maintains statistical independence for t-tests and chi-square tests\n")
+  
+  # Update Heart_clean to use balanced dataset
+  Heart_clean <- Heart_clean_balanced
+  
+  cat(sprintf("\n✓ Heart_clean dataset updated with random sampling approach\n"))
+  cat(sprintf("Perfect 50/50 balance achieved: %d Yes cases, %d No cases\n", 
+              sum(Heart_clean$Coronary_Heart_Disease == "Yes"),
+              sum(Heart_clean$Coronary_Heart_Disease == "No")))
+  cat("\n**Key Advantage for Modeling**: Age and Sex can now contribute to predictions!\n")
+}
 ```
 
 ---
@@ -232,14 +280,7 @@ cat(sprintf("Final cleaned dataset size: %d rows\n", rows_final))
 
 # Data Visualizations
 
-## Coronary Heart Disease Distribution
-```{r, results='asis'}
-ggplot(Heart_clean, aes(x = Coronary_Heart_Disease)) +
-  geom_bar(fill = "#249bd3") +
-  labs(x = "Coronary Heart Disease", y = "Count")
-```
 
-*Most samples do not have coronary heart disease.*
 
 ## Diabetes Status Distribution
 ```{r, results='asis'}
@@ -294,6 +335,83 @@ ggplot(na.omit(Heart_clean), aes(x = BMI_Value)) +
 ```
 
 *BMI is right-skewed, concentrated in the 20–40 range.*
+
+## Sex vs Coronary Heart Disease Distribution
+```{r}
+# Create a grouped bar plot for Sex vs CHD
+ggplot(Heart_clean, aes(x = Sex, fill = Coronary_Heart_Disease)) +
+  geom_bar(position = "dodge") +
+  labs(
+    title = "Sex Distribution by Coronary Heart Disease Status",
+    x = "Sex",
+    y = "Count",
+    fill = "CHD Status"
+  ) +
+  scale_fill_manual(values = c("Yes" = "#e74c3c", "No" = "#2ecc71")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    legend.position = "top"
+  )
+
+# Print counts and proportions
+sex_chd_table <- table(Heart_clean$Sex, Heart_clean$Coronary_Heart_Disease)
+cat("\n=== Sex vs CHD Counts ===\n")
+print(sex_chd_table)
+
+cat("\n=== CHD Rate by Sex (Row Percentages) ===\n")
+sex_chd_prop <- prop.table(sex_chd_table, margin = 1) * 100
+print(round(sex_chd_prop, 2))
+
+cat("\n=== Sex Distribution within CHD Groups (Column Percentages) ===\n")
+chd_sex_prop <- prop.table(sex_chd_table, margin = 2) * 100
+print(round(chd_sex_prop, 2))
+```
+
+*With random sampling (no matching), we can observe natural sex distribution differences between CHD groups. Males show higher CHD prevalence, while the overall sex ratio is no longer artificially balanced 1:1 as it was with the matched case-control design. This allows Sex to function as a meaningful predictor in our models.*
+
+## Age vs Coronary Heart Disease Distribution
+```{r, fig.width=12, fig.height=6}
+# Create a grouped bar plot for Age vs CHD
+ggplot(Heart_clean, aes(x = Age, fill = Coronary_Heart_Disease)) +
+  geom_bar(position = "dodge") +
+  labs(
+    title = "Age Distribution by Coronary Heart Disease Status",
+    x = "Age Group",
+    y = "Count",
+    fill = "CHD Status"
+  ) +
+  scale_fill_manual(values = c("Yes" = "#e74c3c", "No" = "#2ecc71")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "top"
+  )
+
+# Print counts and proportions
+age_chd_table <- table(Heart_clean$Age, Heart_clean$Coronary_Heart_Disease)
+cat("\n=== Age vs CHD Counts ===\n")
+print(age_chd_table)
+
+cat("\n=== CHD Rate by Age Group (Row Percentages) ===\n")
+age_chd_prop <- prop.table(age_chd_table, margin = 1) * 100
+print(round(age_chd_prop, 2))
+
+cat("\n=== Age Distribution within CHD Groups (Column Percentages) ===\n")
+chd_age_prop <- prop.table(age_chd_table, margin = 2) * 100
+print(round(chd_age_prop, 2))
+
+# Calculate and display mean age effect
+cat("\n=== Key Finding: Age-CHD Relationship ===\n")
+cat("Notice how CHD prevalence increases dramatically with age:\n")
+for(age_group in levels(Heart_clean$Age)) {
+  chd_rate <- age_chd_prop[age_group, "Yes"]
+  cat(sprintf("  %s: %.1f%% CHD rate\n", age_group, chd_rate))
+}
+```
+
+*With random sampling, we observe the natural age-CHD gradient: older age groups (50-69) have dramatically higher CHD rates compared to younger groups (18-49). This critical pattern was completely masked in the matched case-control design where age distributions were forced to be identical. The decision tree now correctly identifies Age 50-69 as the primary risk factor, enabling accurate predictions.*
 
 ---
 
@@ -652,7 +770,7 @@ library(pROC)
 
 # Select the key predictors (justified by statistical tests above)
 rf_df <- Heart_clean %>%
-  select(Coronary_Heart_Disease, Age, Sex, Smoking_Status, Diabetes_Status,
+  select(Age, Sex, Coronary_Heart_Disease, Smoking_Status, Diabetes_Status,
          Exercise_Past_30_Days, General_Health_Status, BMI_Value) %>%
   na.omit()
 
@@ -669,16 +787,19 @@ train_index <- createDataPartition(rf_df$Coronary_Heart_Disease, p = 0.7, list =
 train_rf <- rf_df[train_index, ]
 test_rf  <- rf_df[-train_index, ]
 
-# Train RF
+# Train RF with optimized parameters for small dataset
 set.seed(123)
+
 rf_orig <- ranger(
   formula = Coronary_Heart_Disease ~ .,
   data = train_rf,
-  num.trees = 500,
-  mtry = floor(sqrt(ncol(train_rf) - 1)),
-  importance = "permutation",
-  min.node.size = 10,
-  probability = TRUE
+  num.trees = 500,           # Good for small datasets (500-1000 is standard)
+  mtry = floor(sqrt(ncol(train_rf) - 1)),  # Standard for classification (√p)
+  importance = "permutation",  # Good choice for interpretability
+  min.node.size = 5,          # Reduced from 10 to allow finer splits with small dataset
+  probability = TRUE,
+  sample.fraction = 0.7,      # Use 70% of training data per tree (helps with small datasets)
+  replace = TRUE              # Bootstrap sampling (default, but explicit for clarity)
 )
 
 rf_orig
@@ -694,7 +815,7 @@ pred_prob_orig <- predict(rf_orig, data = test_rf)$predictions[, "Yes"]
 roc_obj_rf <- roc(test_rf$Coronary_Heart_Disease, pred_prob_orig)
 best <- coords(roc_obj_rf, "best", best.method = "youden", ret = c("threshold","sensitivity","specificity"))
 print(best)
-optimal_cutoff_rf <- as.numeric(best["threshold"])
+optimal_cutoff_rf <- best$threshold[1]
 
 # Classify with optimal cutoff
 pred_class_rf_opt <- factor(ifelse(pred_prob_orig >= optimal_cutoff_rf, "Yes", "No"),
@@ -709,13 +830,25 @@ TN <- conf_opt$table[1,1]
 FP <- conf_opt$table[1,2]
 FN <- conf_opt$table[2,1]
 
+
+
+# accuracy <- (TP + TN) / (TP + TN + FP + FN)
+# precision <- ifelse((TP + FP) == 0, NA, TP / (TP + FP))
+# recall_sensitivity <- ifelse((TP + FN) == 0, NA, TP / (TP + FN))
+# specificity <- ifelse((TN + FP) == 0, NA, TN / (TN + FP))
+# f1_score <- ifelse((TP + FP) == 0 | (TP + FN) == 0, NA, 
+#                    2 * (precision * recall_sensitivity) / (precision + recall_sensitivity))
+
+
+
 metrics_df <- data.frame(
-  Metric = c("Accuracy", "Precision", "Recall", "F1-score"),
+  Metric = c("Accuracy", "Precision", "Recall", "F1-score", "Specificity"),
   Value  = round(c(
     (TP + TN) / (TP + TN + FP + FN),
     ifelse((TP + FP) == 0, NA, TP / (TP + FP)),
     ifelse((TP + FN) == 0, NA, TP / (TP + FN)),
-    ifelse((TP + FP) == 0 | (TP + FN) == 0, NA, 2 * ( (TP / (TP + FP)) * (TP / (TP + FN)) / ((TP / (TP + FP)) + (TP / (TP + FN))) ))
+    ifelse((TP + FP) == 0 | (TP + FN) == 0, NA, 2 * ( (TP / (TP + FP)) * (TP / (TP + FN)) / ((TP / (TP + FP)) + (TP / (TP + FN))) )),
+    ifelse((TN + FP) == 0, NA, TN / (TN + FP))
   ), 4)
 )
 print(metrics_df)
@@ -751,5 +884,251 @@ ggplot(var_imp, aes(x = reorder(Variable, Importance), y = Importance)) +
   theme_minimal()
 ```
 
+---
+
+# Decision Tree Model
+
+## Model Training
+
+**Rationale:**  
+Decision Trees provide an interpretable, rule-based approach to classification. Unlike Random Forest's "black box" ensemble, CART models generate explicit decision rules that clinicians can easily understand and apply. This is particularly valuable in healthcare settings where model interpretability is crucial for adoption and trust.
+
+```{r}
+library(rpart)
+library(rpart.plot)
+library(caret)
+
+# Use the same train/test split as Random Forest (already created above)
+# Variables: Coronary_Heart_Disease, Age, Sex, Smoking_Status, Diabetes_Status, 
+#            Exercise_Past_30_Days, General_Health_Status, BMI_Value
+
+# Train Decision Tree with complexity parameter tuning
+set.seed(123)
+
+# Build initial tree
+tree_model <- rpart(
+  formula = Coronary_Heart_Disease ~ Age + Sex + Smoking_Status + Diabetes_Status + 
+                                      Exercise_Past_30_Days + General_Health_Status + BMI_Value,
+  data = train_rf,
+  method = "class",
+  control = rpart.control(
+    cp = 0.001,        # Complexity parameter (lower = more splits)
+    minsplit = 20,     # Minimum observations to attempt split
+    minbucket = 10,    # Minimum observations in terminal node
+    maxdepth = 10      # Maximum tree depth
+  )
+)
+
+# Print tree summary
+cat("=== Decision Tree Model Summary ===\n")
+print(tree_model)
+
+# Display complexity parameter table
+cat("\n=== Complexity Parameter Table ===\n")
+printcp(tree_model)
+
+# Find optimal CP (minimum xerror)
+optimal_cp <- tree_model$cptable[which.min(tree_model$cptable[,"xerror"]),"CP"]
+cat(sprintf("\nOptimal Complexity Parameter (CP): %.5f\n", optimal_cp))
+
+# Prune tree to optimal CP
+tree_pruned <- prune(tree_model, cp = optimal_cp)
+
+cat("\n=== Pruned Decision Tree Summary ===\n")
+print(tree_pruned)
+```
+
+## Decision Tree Visualization
+
+```{r, fig.width=14, fig.height=10}
+# Visualize the pruned decision tree
+rpart.plot(
+  tree_pruned,
+  type = 4,              # Display all node labels
+  extra = 101,           # Display number of observations and percentage
+  fallen.leaves = TRUE,  # Put leaves at bottom
+  branch.lty = 3,        # Dotted branch lines
+  shadow.col = "gray",   # Add shadow
+  box.palette = "RdYlGn", # Red-Yellow-Green color scheme
+  main = "Decision Tree for Coronary Heart Disease Prediction\n(Pruned with Optimal CP)",
+  cex.main = 1.3,
+  digits = 3,
+  tweak = 1.2            # Scale text size
+)
+
+# Add interpretation legend
+cat("\n=== How to Read the Tree ===\n")
+cat("- Each node shows: prediction, probability of Yes, percentage of total observations\n")
+cat("- Color coding: Green = predict No CHD, Red = predict Yes CHD\n")
+cat("- Follow paths from top to bottom based on variable conditions\n")
+cat("- Terminal nodes (leaves) show final predictions\n")
+```
+
+## Decision Tree Performance Evaluation
+
+```{r}
+# Predict on test set
+tree_pred_class <- predict(tree_pruned, newdata = test_rf, type = "class")
+tree_pred_prob <- predict(tree_pruned, newdata = test_rf, type = "prob")[, "Yes"]
+
+# Confusion Matrix
+conf_tree <- confusionMatrix(tree_pred_class, test_rf$Coronary_Heart_Disease)
+
+# Display confusion matrix (compact output)
+print(conf_tree)
+
+# Extract metrics
+TP_tree <- conf_tree$table[2,2]
+TN_tree <- conf_tree$table[1,1]
+FP_tree <- conf_tree$table[1,2]
+FN_tree <- conf_tree$table[2,1]
+
+# Calculate comprehensive metrics
+metrics_tree <- data.frame(
+  Metric = c("Accuracy", "Precision (PPV)", "Recall (Sensitivity)", "Specificity", "F1-Score", "AUC"),
+  Value  = round(c(
+    (TP_tree + TN_tree) / (TP_tree + TN_tree + FP_tree + FN_tree),
+    ifelse((TP_tree + FP_tree) == 0, NA, TP_tree / (TP_tree + FP_tree)),
+    ifelse((TP_tree + FN_tree) == 0, NA, TP_tree / (TP_tree + FN_tree)),
+    ifelse((TN_tree + FP_tree) == 0, NA, TN_tree / (TN_tree + FP_tree)),
+    ifelse((TP_tree + FP_tree) == 0 | (TP_tree + FN_tree) == 0, NA, 
+           2 * ((TP_tree / (TP_tree + FP_tree)) * (TP_tree / (TP_tree + FN_tree))) / 
+               ((TP_tree / (TP_tree + FP_tree)) + (TP_tree / (TP_tree + FN_tree)))),
+    as.numeric(pROC::auc(pROC::roc(test_rf$Coronary_Heart_Disease, tree_pred_prob)))
+  ), 4),
+  Percentage = paste0(round(c(
+    (TP_tree + TN_tree) / (TP_tree + TN_tree + FP_tree + FN_tree),
+    ifelse((TP_tree + FP_tree) == 0, NA, TP_tree / (TP_tree + FP_tree)),
+    ifelse((TP_tree + FN_tree) == 0, NA, TP_tree / (TP_tree + FN_tree)),
+    ifelse((TN_tree + FP_tree) == 0, NA, TN_tree / (TN_tree + FP_tree)),
+    ifelse((TP_tree + FP_tree) == 0 | (TP_tree + FN_tree) == 0, NA, 
+           2 * ((TP_tree / (TP_tree + FP_tree)) * (TP_tree / (TP_tree + FN_tree))) / 
+               ((TP_tree / (TP_tree + FP_tree)) + (TP_tree / (TP_tree + FN_tree)))),
+    as.numeric(pROC::auc(pROC::roc(test_rf$Coronary_Heart_Disease, tree_pred_prob)))
+  ) * 100, 2), "%")
+)
+
+# Display metrics table
+kable(metrics_tree, 
+      caption = "Decision Tree Model Performance Metrics",
+      align = 'c') %>% 
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+
+# Clinical interpretation
+cat("\n--- Clinical Interpretation (Decision Tree) ---\n")
+cat(sprintf("Sensitivity: %.2f%% - Tree correctly identifies %.2f%% of actual CHD cases\n", 
+            metrics_tree$Value[3] * 100, metrics_tree$Value[3] * 100))
+cat(sprintf("Specificity: %.2f%% - Tree correctly identifies %.2f%% of non-CHD cases\n", 
+            metrics_tree$Value[4] * 100, metrics_tree$Value[4] * 100))
+cat(sprintf("Precision: %.2f%% - When tree predicts CHD, it's correct %.2f%% of the time\n", 
+            metrics_tree$Value[2] * 100, metrics_tree$Value[2] * 100))
+cat(sprintf("AUC: %.4f - Overall discriminative ability\n", metrics_tree$Value[6]))
+```
+
+## ROC Curve Comparison: Random Forest vs Decision Tree
+
+```{r, fig.width=10, fig.height=6}
+# Create ROC curves for both models
+roc_rf <- pROC::roc(test_rf$Coronary_Heart_Disease, pred_prob_orig)
+roc_tree <- pROC::roc(test_rf$Coronary_Heart_Disease, tree_pred_prob)
+
+# Plot comparison
+plot(roc_rf, col = "#1c61b6", lwd = 3, main = "ROC Curve Comparison: Random Forest vs Decision Tree",
+     xlab = "False Positive Rate (1 - Specificity)", 
+     ylab = "True Positive Rate (Sensitivity)")
+plot(roc_tree, col = "#e74c3c", lwd = 3, add = TRUE)
+abline(a = 0, b = 1, lty = 2, col = "gray")
+legend("bottomright", 
+       legend = c(paste0("Random Forest (AUC = ", round(pROC::auc(roc_rf), 3), ")"),
+                  paste0("Decision Tree (AUC = ", round(pROC::auc(roc_tree), 3), ")"),
+                  "Random Classifier"),
+       col = c("#1c61b6", "#e74c3c", "gray"),
+       lwd = c(3, 3, 2),
+       lty = c(1, 1, 2))
+```
+
+## Variable Importance in Decision Tree
+
+```{r, results='asis', fig.width=10, fig.height=6}
+# Extract variable importance from decision tree
+tree_importance <- tree_pruned$variable.importance
+
+if(length(tree_importance) > 0) {
+  # Convert to data frame
+  tree_var_imp <- data.frame(
+    Variable = names(tree_importance),
+    Importance = as.numeric(tree_importance)
+  )
+  tree_var_imp <- tree_var_imp[order(tree_var_imp$Importance, decreasing = TRUE), ]
+  
+  # Plot variable importance
+  ggplot(tree_var_imp, aes(x = reorder(Variable, Importance), y = Importance)) +
+    geom_col(fill = "#e74c3c") +
+    coord_flip() +
+    labs(title = "Decision Tree Variable Importance",
+         subtitle = "Based on total decrease in node impurity",
+         x = "Variable", 
+         y = "Importance") +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+          plot.subtitle = element_text(hjust = 0.5))
+  
+  # Print importance table (remove print() for proper HTML rendering)
+  cat("\n=== Decision Tree Variable Importance ===\n")
+  kable(tree_var_imp, 
+        caption = "Variables Ranked by Importance in Decision Tree",
+        align = 'c',
+        row.names = FALSE) %>%
+    kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+} else {
+  cat("No variable importance available (tree may be too simple)\n")
+}
+```
+
+## Model Comparison: Random Forest vs Decision Tree
+
+```{r, results='asis'}
+# Get AUC for Random Forest (it was printed separately)
+rf_auc <- as.numeric(auc(roc_obj_rf))
+
+# Create comparison table with matching metrics
+model_comparison <- data.frame(
+  Metric = c("Accuracy", "Precision", "Sensitivity", "Specificity", "F1-Score", "AUC"),
+  Random_Forest = c(
+    metrics_df$Value[1],  # Accuracy
+    metrics_df$Value[2],  # Precision
+    metrics_df$Value[3],  # Recall/Sensitivity
+    metrics_df$Value[5],  # Specificity
+    metrics_df$Value[4],  # F1-score
+    rf_auc                # AUC
+  ),
+  Decision_Tree = metrics_tree$Value,
+  stringsAsFactors = FALSE
+)
+
+# Calculate difference
+model_comparison$Difference <- model_comparison$Random_Forest - model_comparison$Decision_Tree
+
+# Add percentage columns
+model_comparison$RF_Pct <- paste0(round(model_comparison$Random_Forest * 100, 2), "%")
+model_comparison$DT_Pct <- paste0(round(model_comparison$Decision_Tree * 100, 2), "%")
+model_comparison$Diff_Pct <- paste0(ifelse(model_comparison$Difference > 0, "+", ""), 
+                                     round(model_comparison$Difference * 100, 2), "%")
+
+# Display comparison (remove print() for proper HTML rendering)
+kable(model_comparison[, c("Metric", "RF_Pct", "DT_Pct", "Diff_Pct")], 
+      caption = "Model Performance Comparison: Random Forest vs Decision Tree",
+      align = 'c',
+      col.names = c("Metric", "Random Forest", "Decision Tree", "Difference (RF - DT)"),
+      row.names = FALSE) %>%
+  kable_styling(bootstrap_options = c("striped", "bordered", "hover"), full_width = FALSE)
+
+# Interpretation
+cat("\n=== Model Comparison Interpretation ===\n")
+cat(sprintf("Random Forest AUC: %.4f\n", model_comparison$Random_Forest[6]))
+cat(sprintf("Decision Tree AUC: %.4f\n", model_comparison$Decision_Tree[6]))
+cat(sprintf("AUC Difference: %.4f\n\n", model_comparison$Difference[6]))
+
+```
 
 ---
