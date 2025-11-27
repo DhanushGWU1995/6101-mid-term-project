@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { ChdPredictionService } from '../../services/chd-prediction.service';
+import { DecisionTreePredictionService } from '../../services/decision-tree-prediction.service';
 import { PatientData } from '../../models/patient-data.model';
 import { PredictionResult } from '../../models/prediction-result.model';
 
@@ -105,7 +105,7 @@ export class PredictionFormComponent {
     }
   ];
 
-  constructor(private chdPredictionService: ChdPredictionService) {}
+  constructor(private decisionTreeService: DecisionTreePredictionService) {}
 
   selectOption(value: string) {
     const currentQuestion = this.questions[this.currentStep];
@@ -122,17 +122,17 @@ export class PredictionFormComponent {
   }
 
   predictCHD() {
-    this.chdPredictionService.predictChd(this.patientData).subscribe({
-      next: (result) => {
+    this.decisionTreeService.predictChd(this.patientData).subscribe({
+      next: (result: PredictionResult) => {
         this.predictionResult = result;
         this.showResult = true;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Prediction error:', error);
         this.predictionResult = {
           hasCoronaryHeartDisease: false,
           probability: 0,
-          message: 'Error connecting to prediction API. Please ensure the R API server is running.',
+          message: 'Error making prediction. Please try again.',
           riskLevel: 'Unknown'
         };
         this.showResult = true;
@@ -182,8 +182,8 @@ export class PredictionFormComponent {
   }
   
   changeAnswers() {
-    // Go back to the beginning but keep the current answers
-    this.currentStep = 0;
+    // Go back to the last question (before prediction)
+    this.currentStep = this.totalSteps - 1;
     this.showResult = false;
     this.predictionResult = null;
     // Patient data is preserved, allowing users to modify their previous answers
@@ -212,6 +212,20 @@ export class PredictionFormComponent {
   goBack() {
     if (this.currentStep > 0) {
       this.currentStep--;
+      // Clear the answer for the question we're going back to
+      const currentQuestion = this.questions[this.currentStep];
+      if (currentQuestion.field !== 'bmiValue') {
+        (this.patientData as any)[currentQuestion.field] = '';
+      }
+      // Clear all answers for subsequent questions
+      for (let i = this.currentStep + 1; i < this.questions.length; i++) {
+        const question = this.questions[i];
+        if (question.field === 'bmiValue') {
+          this.patientData.bmiValue = 25; // Reset to default
+        } else {
+          (this.patientData as any)[question.field] = '';
+        }
+      }
     }
   }
 }

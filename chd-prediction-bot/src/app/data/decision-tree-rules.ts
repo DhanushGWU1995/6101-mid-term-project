@@ -1,87 +1,89 @@
-// Decision Tree Rules derived from R rpart model
-// Root node: n=240489, balanced priors (0.500, 0.500)
+// Decision Tree Rules derived from R rpart model (PRUNED)
+// Simple random sampling dataset (n=15238, balanced 50/50)
+// Root node: n=15238, balanced priors (0.500, 0.500)
 // Terminal nodes marked with * in original output
+// Updated: Based on natural Age/Sex variation (no matching)
 
 export const decisionTreeRules = {
   "rules": [
     {
       "condition": "Age in ['50-54', '55-59', '60-64', '65-69']",
-      "outcome": "Yes (0.648 vs 0.352)",
-      "probability": { "yes": 0.648, "no": 0.352 },
-      "n": 116335,
+      "outcome": "Yes (0.651 vs 0.349)",
+      "probability": { "yes": 0.651, "no": 0.349 },
+      "n": 10117,
       "children": [
         {
           "condition": "General_Health_Status in ['Good', 'Fair', 'Poor']",
-          "outcome": "Yes (0.744 vs 0.256)",
-          "probability": { "yes": 0.744, "no": 0.256 },
-          "n": 63952,
+          "outcome": "Yes (0.750 vs 0.250)",
+          "probability": { "yes": 0.750, "no": 0.250 },
+          "n": 7341,
           "children": [
             {
               "condition": "General_Health_Status in ['Fair', 'Poor']",
-              "outcome": "Yes (0.829 vs 0.171)",
-              "probability": { "yes": 0.829, "no": 0.171 },
-              "n": 25394,
+              "outcome": "Yes (0.836 vs 0.164)",
+              "probability": { "yes": 0.836, "no": 0.164 },
+              "n": 4110,
               "terminal": true
             },
             {
               "condition": "General_Health_Status == 'Good'",
-              "outcome": "Yes (0.636 vs 0.364)",
-              "probability": { "yes": 0.636, "no": 0.364 },
-              "n": 38558,
+              "outcome": "Yes (0.641 vs 0.359)",
+              "probability": { "yes": 0.641, "no": 0.359 },
+              "n": 3231,
               "children": [
                 {
                   "condition": "Age in ['60-64', '65-69']",
-                  "outcome": "Yes (0.693 vs 0.307)",
-                  "probability": { "yes": 0.693, "no": 0.307 },
-                  "n": 22365,
+                  "outcome": "Yes (0.702 vs 0.298)",
+                  "probability": { "yes": 0.702, "no": 0.298 },
+                  "n": 2175,
                   "terminal": true
                 },
                 {
                   "condition": "Age in ['50-54', '55-59']",
-                  "outcome": "Yes (0.517 vs 0.483)",
-                  "probability": { "yes": 0.517, "no": 0.483 },
-                  "n": 16193,
+                  "outcome": "Yes (0.514 vs 0.486)",
+                  "probability": { "yes": 0.514, "no": 0.486 },
+                  "n": 1056,
                   "children": [
                     {
-                      "condition": "Diabetes_Status in ['Yes', 'Yes/borderline']",
-                      "outcome": "Yes (0.662 vs 0.338)",
-                      "probability": { "yes": 0.662, "no": 0.338 },
-                      "n": 3051,
+                      "condition": "Diabetes_Status in ['Yes', 'Yes/borderline', 'No']",
+                      "outcome": "Yes (0.630 vs 0.370)",
+                      "probability": { "yes": 0.630, "no": 0.370 },
+                      "n": 335,
                       "terminal": true
                     },
                     {
-                      "condition": "Diabetes_Status in ['Yes/pregnancy only', 'No']",
-                      "outcome": "No (0.465 vs 0.535)",
-                      "probability": { "yes": 0.465, "no": 0.535 },
-                      "n": 13142,
+                      "condition": "Diabetes_Status == 'Yes/pregnancy only'",
+                      "outcome": "No (0.460 vs 0.540)",
+                      "probability": { "yes": 0.460, "no": 0.540 },
+                      "n": 721,
                       "children": [
                         {
-                          "condition": "Smoking_Status == 'Yes'",
-                          "outcome": "Yes (0.520 vs 0.480)",
-                          "probability": { "yes": 0.520, "no": 0.480 },
-                          "n": 5634,
+                          "condition": "Age == '55-59'",
+                          "outcome": "Yes (0.515 vs 0.485)",
+                          "probability": { "yes": 0.515, "no": 0.485 },
+                          "n": 394,
                           "children": [
                             {
-                              "condition": "Age == '55-59'",
-                              "outcome": "Yes (0.569 vs 0.431)",
-                              "probability": { "yes": 0.569, "no": 0.431 },
-                              "n": 2880,
+                              "condition": "BMI_Value >= 26.6",
+                              "outcome": "Yes (0.555 vs 0.445)",
+                              "probability": { "yes": 0.555, "no": 0.445 },
+                              "n": 274,
                               "terminal": true
                             },
                             {
-                              "condition": "Age == '50-54'",
-                              "outcome": "No (0.456 vs 0.544)",
-                              "probability": { "yes": 0.456, "no": 0.544 },
-                              "n": 2754,
+                              "condition": "BMI_Value < 26.6",
+                              "outcome": "No (0.425 vs 0.575)",
+                              "probability": { "yes": 0.425, "no": 0.575 },
+                              "n": 120,
                               "terminal": true
                             }
                           ]
                         },
                         {
-                          "condition": "Smoking_Status == 'No'",
-                          "outcome": "No (0.416 vs 0.584)",
-                          "probability": { "yes": 0.416, "no": 0.584 },
-                          "n": 7508,
+                          "condition": "Age == '50-54'",
+                          "outcome": "No (0.394 vs 0.606)",
+                          "probability": { "yes": 0.394, "no": 0.606 },
+                          "n": 327,
                           "terminal": true
                         }
                       ]
@@ -94,47 +96,47 @@ export const decisionTreeRules = {
         },
         {
           "condition": "General_Health_Status in ['Excellent', 'Very Good']",
-          "outcome": "No (0.395 vs 0.605)",
-          "probability": { "yes": 0.395, "no": 0.605 },
-          "n": 52383,
+          "outcome": "No (0.390 vs 0.610)",
+          "probability": { "yes": 0.390, "no": 0.610 },
+          "n": 2776,
           "children": [
             {
               "condition": "Age in ['60-64', '65-69']",
-              "outcome": "No (0.470 vs 0.530)",
-              "probability": { "yes": 0.470, "no": 0.530 },
-              "n": 30137,
+              "outcome": "No (0.459 vs 0.541)",
+              "probability": { "yes": 0.459, "no": 0.541 },
+              "n": 1813,
               "children": [
                 {
                   "condition": "Sex == 'Male'",
-                  "outcome": "Yes (0.567 vs 0.433)",
-                  "probability": { "yes": 0.567, "no": 0.433 },
-                  "n": 13788,
+                  "outcome": "Yes (0.557 vs 0.443)",
+                  "probability": { "yes": 0.557, "no": 0.443 },
+                  "n": 983,
                   "children": [
                     {
                       "condition": "General_Health_Status == 'Very Good'",
-                      "outcome": "Yes (0.605 vs 0.395)",
-                      "probability": { "yes": 0.605, "no": 0.395 },
-                      "n": 9816,
+                      "outcome": "Yes (0.606 vs 0.394)",
+                      "probability": { "yes": 0.606, "no": 0.394 },
+                      "n": 743,
                       "terminal": true
                     },
                     {
                       "condition": "General_Health_Status == 'Excellent'",
-                      "outcome": "No (0.436 vs 0.564)",
-                      "probability": { "yes": 0.436, "no": 0.564 },
-                      "n": 3972,
+                      "outcome": "No (0.408 vs 0.592)",
+                      "probability": { "yes": 0.408, "no": 0.592 },
+                      "n": 240,
                       "children": [
                         {
                           "condition": "Diabetes_Status == 'Yes'",
-                          "outcome": "Yes (0.721 vs 0.279)",
-                          "probability": { "yes": 0.721, "no": 0.279 },
-                          "n": 249,
+                          "outcome": "Yes (0.655 vs 0.345)",
+                          "probability": { "yes": 0.655, "no": 0.345 },
+                          "n": 29,
                           "terminal": true
                         },
                         {
-                          "condition": "Diabetes_Status in ['Yes/borderline', 'Yes/pregnancy only', 'No']",
-                          "outcome": "No (0.397 vs 0.603)",
-                          "probability": { "yes": 0.397, "no": 0.603 },
-                          "n": 3723,
+                          "condition": "Diabetes_Status == 'Yes/pregnancy only'",
+                          "outcome": "No (0.374 vs 0.626)",
+                          "probability": { "yes": 0.374, "no": 0.626 },
+                          "n": 211,
                           "terminal": true
                         }
                       ]
@@ -143,22 +145,22 @@ export const decisionTreeRules = {
                 },
                 {
                   "condition": "Sex == 'Female'",
-                  "outcome": "No (0.349 vs 0.651)",
-                  "probability": { "yes": 0.349, "no": 0.651 },
-                  "n": 16349,
+                  "outcome": "No (0.343 vs 0.657)",
+                  "probability": { "yes": 0.343, "no": 0.657 },
+                  "n": 830,
                   "children": [
                     {
-                      "condition": "Diabetes_Status == 'Yes'",
-                      "outcome": "Yes (0.608 vs 0.392)",
-                      "probability": { "yes": 0.608, "no": 0.392 },
-                      "n": 1237,
+                      "condition": "Diabetes_Status in ['Yes', 'Yes/borderline']",
+                      "outcome": "Yes (0.565 vs 0.435)",
+                      "probability": { "yes": 0.565, "no": 0.435 },
+                      "n": 108,
                       "terminal": true
                     },
                     {
-                      "condition": "Diabetes_Status in ['Yes/borderline', 'Yes/pregnancy only', 'No']",
-                      "outcome": "No (0.314 vs 0.686)",
-                      "probability": { "yes": 0.314, "no": 0.686 },
-                      "n": 15112,
+                      "condition": "Diabetes_Status in ['Yes/pregnancy only', 'No']",
+                      "outcome": "No (0.310 vs 0.690)",
+                      "probability": { "yes": 0.310, "no": 0.690 },
+                      "n": 722,
                       "terminal": true
                     }
                   ]
@@ -167,9 +169,9 @@ export const decisionTreeRules = {
             },
             {
               "condition": "Age in ['50-54', '55-59']",
-              "outcome": "No (0.255 vs 0.745)",
-              "probability": { "yes": 0.255, "no": 0.745 },
-              "n": 22246,
+              "outcome": "No (0.259 vs 0.741)",
+              "probability": { "yes": 0.259, "no": 0.741 },
+              "n": 963,
               "terminal": true
             }
           ]
@@ -178,47 +180,47 @@ export const decisionTreeRules = {
     },
     {
       "condition": "Age in ['18-24', '25-29', '30-34', '35-39', '40-44', '45-49']",
-      "outcome": "No (0.203 vs 0.797)",
-      "probability": { "yes": 0.203, "no": 0.797 },
-      "n": 124154,
+      "outcome": "No (0.202 vs 0.798)",
+      "probability": { "yes": 0.202, "no": 0.798 },
+      "n": 5121,
       "children": [
         {
           "condition": "General_Health_Status in ['Fair', 'Poor']",
-          "outcome": "No (0.478 vs 0.522)",
-          "probability": { "yes": 0.478, "no": 0.522 },
-          "n": 18227,
+          "outcome": "No (0.482 vs 0.518)",
+          "probability": { "yes": 0.482, "no": 0.518 },
+          "n": 1099,
           "children": [
             {
               "condition": "Age in ['40-44', '45-49']",
-              "outcome": "Yes (0.621 vs 0.379)",
-              "probability": { "yes": 0.621, "no": 0.379 },
-              "n": 7479,
+              "outcome": "Yes (0.616 vs 0.384)",
+              "probability": { "yes": 0.616, "no": 0.384 },
+              "n": 609,
               "children": [
                 {
                   "condition": "General_Health_Status == 'Poor'",
-                  "outcome": "Yes (0.769 vs 0.231)",
-                  "probability": { "yes": 0.769, "no": 0.231 },
-                  "n": 1621,
+                  "outcome": "Yes (0.777 vs 0.223)",
+                  "probability": { "yes": 0.777, "no": 0.223 },
+                  "n": 211,
                   "terminal": true
                 },
                 {
                   "condition": "General_Health_Status == 'Fair'",
-                  "outcome": "Yes (0.547 vs 0.453)",
-                  "probability": { "yes": 0.547, "no": 0.453 },
-                  "n": 5858,
+                  "outcome": "Yes (0.530 vs 0.470)",
+                  "probability": { "yes": 0.530, "no": 0.470 },
+                  "n": 398,
                   "children": [
                     {
-                      "condition": "Smoking_Status == 'Yes'",
-                      "outcome": "Yes (0.611 vs 0.389)",
-                      "probability": { "yes": 0.611, "no": 0.389 },
-                      "n": 3101,
+                      "condition": "Age == '45-49'",
+                      "outcome": "Yes (0.594 vs 0.406)",
+                      "probability": { "yes": 0.594, "no": 0.406 },
+                      "n": 239,
                       "terminal": true
                     },
                     {
-                      "condition": "Smoking_Status == 'No'",
-                      "outcome": "No (0.446 vs 0.554)",
-                      "probability": { "yes": 0.446, "no": 0.554 },
-                      "n": 2757,
+                      "condition": "Age == '40-44'",
+                      "outcome": "No (0.434 vs 0.566)",
+                      "probability": { "yes": 0.434, "no": 0.566 },
+                      "n": 159,
                       "terminal": true
                     }
                   ]
@@ -227,18 +229,33 @@ export const decisionTreeRules = {
             },
             {
               "condition": "Age in ['18-24', '25-29', '30-34', '35-39']",
-              "outcome": "No (0.301 vs 0.699)",
-              "probability": { "yes": 0.301, "no": 0.699 },
-              "n": 10748,
-              "terminal": true
+              "outcome": "No (0.316 vs 0.684)",
+              "probability": { "yes": 0.316, "no": 0.684 },
+              "n": 490,
+              "children": [
+                {
+                  "condition": "General_Health_Status == 'Poor'",
+                  "outcome": "Yes (0.545 vs 0.455)",
+                  "probability": { "yes": 0.545, "no": 0.455 },
+                  "n": 101,
+                  "terminal": true
+                },
+                {
+                  "condition": "General_Health_Status == 'Fair'",
+                  "outcome": "No (0.257 vs 0.743)",
+                  "probability": { "yes": 0.257, "no": 0.743 },
+                  "n": 389,
+                  "terminal": true
+                }
+              ]
             }
           ]
         },
         {
           "condition": "General_Health_Status in ['Excellent', 'Very Good', 'Good']",
-          "outcome": "No (0.126 vs 0.874)",
-          "probability": { "yes": 0.126, "no": 0.874 },
-          "n": 105927,
+          "outcome": "No (0.125 vs 0.875)",
+          "probability": { "yes": 0.125, "no": 0.875 },
+          "n": 4022,
           "terminal": true
         }
       ]
