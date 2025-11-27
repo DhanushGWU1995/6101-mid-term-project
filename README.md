@@ -14,3 +14,6 @@ https://code.visualstudio.com/
 # Cleaned data file format : .csv (https://github.com/DhanushGWU1995/6101-mid-term-project/blob/main/Data_cleanup_scripts/BRFSS_2024_Readable_Columns.csv)
 # EDA Output file format : HTML
 
+# CHD Prediction App:
+https://dhanushgwu1995.github.io/6101-mid-term-project/predict
+
