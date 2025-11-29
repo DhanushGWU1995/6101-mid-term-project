@@ -200,7 +200,7 @@ if ("Age" %in% names(Heart_clean)) {
   cat(sprintf("Removed %d rows with Age above 69 years\n", rows_before - nrow(Heart_clean)))
 }
 
-# Remove Age label above 69
+# Remove Age label above 69 
 Heart_clean$Age <- factor(Heart_clean$Age)
 
 
