@@ -45,8 +45,8 @@ def xpt_to_csv(xpt_path, csv_path, extract_specific_vars=True):
     brfss_variables = [
         'SEQNO',         # Patient ID (sequence number)
         '_AGEG5YR',      # Age (age groups in 5-year intervals)
-        'SEXVAR',        # Sex (1=male, 2=female) - UPDATED FROM SEX TO SEXVAR
-        'DIABETE4',      # Diabetes (diabetes status) - UPDATED FROM DIABETE3 TO DIABETE4
+        'SEXVAR',        # Sex (1=male, 2=female)
+        'DIABETE4',      # Diabetes (diabetes status)
         'FLUSHOT7',      # Flu vaccination
         'SMOKE100',      # Smoked at least 100 cigarettes in lifetime
         'ALCDAY4',       # Alcohol consumption days (2024 version)  
@@ -58,20 +58,20 @@ def xpt_to_csv(xpt_path, csv_path, extract_specific_vars=True):
         '_BMI5CAT',      # BMI categories (alternative)
         '_RFBMI5',       # BMI risk factor
         '_TOTINDA',      # Exercise (1=meets aerobic guidelines, 0=no)
-        'EXERANY2',      # Exercise in Past 30 Days (main physical activity variable in 2024)
+        'EXERANY2',      # Exercise in Past 30 Days
         'DIFFWALK',      # Difficulty Walking or Climbing Stairs
         'CVDSTRK3',      # Previous Heart Problems (CVD/stroke)
         'CVDINFR4',      # Previous Heart Problems (heart attack)
-        'CVDCRHD4',      # Previous Heart Problems (coronary/angina) - UPDATED FROM CHCSCNCR TO CVDCRHD4
-        'GENHLTH',       # General Health Status - ADDED KEY HEALTH VARIABLE
+        'CVDCRHD4',      # Previous Heart Problems (coronary/angina)
+        'GENHLTH',       # General Health Status
         'MENTHLTH',      # Stress Level (poor mental health days)
         'POORHLTH',      # Poor physical health days
-        'INCOME3',       # Income (household income categories) - UPDATED FROM INCOME2 TO INCOME3
-        'WEIGHT2',       # Weight - ADDED PHYSICAL MEASUREMENT
-        'HEIGHT3',       # Height - ADDED PHYSICAL MEASUREMENT  
-        '_STATE',        # Country/State (state code)
-        '_PSU',          # Region-Specific: primary sampling unit
-        '_RFHLTH'        # Region-Specific: health prevalence by region
+        'INCOME3',       # Household Income Category
+        'WEIGHT2',       # Weight in pounds
+        'HEIGHT3',       # Height in feet/inches
+        '_STATE',        # State
+        '_PSU',          # Sampling unit
+        '_RFHLTH',       # Regional health
     ]
     try:
         # Check if input file exists
@@ -174,7 +174,8 @@ def xpt_to_csv(xpt_path, csv_path, extract_specific_vars=True):
                     'HEIGHT3': 'Height_Feet_Inches',  # Added new variable
                     '_STATE': 'State_Code',
                     '_PSU': 'Primary_Sampling_Unit',
-                    '_RFHLTH': 'Regional_Health_Prevalence'
+                    '_RFHLTH': 'Regional_Health_Prevalence',
+                    
                 }
                 
                 # Rename columns to readable names

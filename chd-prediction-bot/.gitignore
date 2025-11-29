@@ -1,0 +1,19 @@
+# Angular build artifacts
+.angular/
+dist/
+
+# Dependencies
+node_modules/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+.DS_Store
+
+# Misc
+npm-debug.log
+yarn-error.log
+.npmrc

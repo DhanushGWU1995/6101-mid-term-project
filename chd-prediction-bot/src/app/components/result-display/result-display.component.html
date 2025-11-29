@@ -1,0 +1,73 @@
+<div class="result-container" *ngIf="predictionResult" [ngClass]="riskClass">
+  <h3>🔮 CHD Risk Assessment</h3>
+  
+  <div class="result-card">
+    <div class="risk-indicator">
+      <h4>Risk Status</h4>
+      <p class="risk-status">
+        {{ riskEmoji }} {{ riskLabel }}
+      </p>
+      <div class="probability-display">
+        {{ (predictionResult.probability * 100).toFixed(1) }}%
+      </div>
+      <div class="probability-label">CHD Risk Probability</div>
+    </div>
+    
+    <div class="risk-bar-container">
+      <div class="risk-scale-label">
+        <span class="scale-low">LOW</span>
+        <span class="scale-high">HIGH</span>
+      </div>
+      <div class="risk-bar">
+        <div class="risk-bar-fill" [style.width.%]="getRiskBarWidth()"></div>
+      </div>
+      <div class="risk-bar-labels">
+        <span>0%</span>
+        <span class="label-25">25%</span>
+        <span class="label-50">50%</span>
+        <span class="label-75">75%</span>
+        <span>100%</span>
+      </div>
+    </div>
+    
+    <div class="risk-details">
+      <div class="detail-row">
+        <span class="detail-label">Model Type:</span>
+        <span class="detail-value">Decision Tree (CART)</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Risk Category:</span>
+        <span class="detail-value">{{ predictionResult.riskLevel || riskLabel }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Clinical Assessment:</span>
+        <span class="detail-value">{{ predictionResult.hasCoronaryHeartDisease ? 'Elevated Risk Detected' : 'Standard Risk Profile' }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Model Confidence:</span>
+        <span class="detail-value">{{ getModelConfidence() }}</span>
+      </div>
+      <div class="detail-row" *ngIf="sampleSize > 0">
+        <span class="detail-label">Terminal Node Size:</span>
+        <span class="detail-value">{{ sampleSize }} patients</span>
+      </div>
+    </div>
+    
+    <div class="message">
+      <p>{{ predictionResult.message }}</p>
+    </div>
+    
+    <div class="model-info">
+      <p><strong>📊 Model Details:</strong></p>
+      <ul>
+        <li>Dataset: BRFSS 2024 (n=15,238 matched pairs)</li>
+        <li>Design: 3-way matched case-control (State + Age + Sex)</li>
+        <li>Accuracy: 66.6% | Sensitivity: 64.0% | Specificity: 69.2%</li>
+      </ul>
+    </div>
+    
+    <div class="disclaimer">
+      <p><em>⚕️ This is a predictive model based on statistical analysis. Please consult with a healthcare professional for medical advice.</em></p>
+    </div>
+  </div>
+</div>
