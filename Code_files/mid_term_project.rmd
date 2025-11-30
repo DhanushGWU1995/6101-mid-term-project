@@ -598,34 +598,10 @@ if(chi_test_diabetes$p.value < 0.05) {
 *The chi-squared test shows a very strong relationship between diabetes status and coronary heart disease (p < 2e-16). This means it is almost impossible that the result happened by chance. People with diabetes or prediabetes have a much higher likelihood of developing coronary heart disease compared to those without diabetes, suggesting that poor blood sugar control is closely linked to increased heart disease risk.
 Moreover, we can see from the chart that individuals with diabetes have a noticeably higher proportion of coronary heart disease compared to others.*
 
----
-
-# Conclusion
-
-This analysis examined key lifestyle and health determinants associated with coronary heart disease (CHD). The statistical results demonstrated strong and consistent relationships: elevated BMI, diabetes, and smoking habits were significantly linked to an increased likelihood of CHD. Additionally, BMI showed notable variation across self-reported health status levels, while regular physical activity was associated with healthier BMI categories. These findings underscore the critical importance of adopting and maintaining healthy lifestyle behaviors to prevent and manage coronary heart disease.
-
-## Limitations
-- Results are based on available data with some missing values
-- Cross-sectional data limits causal conclusions
-- Statistical significance doesn't always mean clinical significance
-
-## Practical Implications
-
-The results help identify important risk factors for coronary heart disease and can guide
-
-- Healthcare screening programs
-- Public health interventions 
-- Individual patient care decisions to reduce CHD incidence through lifestyle modifications.
-
-## References
-
-Tsao, C. W., & Vasan, R. S. (2015). Cohort profile: The Framingham Heart Study (FHS): Overview of milestones in cardiovascular epidemiology. *International Journal of Epidemiology*, *44*(6), 1800–1813. https://doi.org/10.1093/ije/dyv337
-
-Yusuf, S., Hawken, S., Ounpuu, S., Dans, T., Avezum, A., Lanas, F., McQueen, M., Budaj, A., Pais, P., Varigos, J., Liu, L., & INTERHEART Study Investigators. (2004). Effect of potentially modifiable risk factors associated with myocardial infarction in 52 countries (the INTERHEART study): Case-control study. *The Lancet*, *364*(9438), 937–952. https://doi.org/10.1016/S0140-6736(04)17018-9
 
 
-## New Smart Question 
-# How do Age, Sex, Smoking_Status, Diabetes_Status, Exercise_Past_30_Days, and General_Health_Status affect the likelihood of having Coronary_Heart_Disease?
+# New Smart Question 
+## How do Age, Sex, Smoking_Status, Diabetes_Status, Exercise_Past_30_Days, and General_Health_Status affect the likelihood of having Coronary_Heart_Disease?
 
 # Exploratory Data Analysis
 ```{r}
@@ -639,6 +615,8 @@ print("Coronary Heart Disease Distribution:")
 print(chd_distribution)
 cat("Imbalance ratio (No:Yes):", round(chd_distribution["No"]/chd_distribution["Yes"], 1), ":1\n")
 ```
+
+*The dataset has 21,766 people, and CHD is evenly split between Yes and No (10,883 each). Most respondents are between 50–69 years old, and the other variables like sex, smoking, diabetes, exercise, and general health all have a decent mix of categories.*
 
 ---
 
@@ -667,6 +645,9 @@ print(train_class_dist)
 # Print the overall CHD Yes count in training data
 cat("Overall CHD Yes count in training data:", train_class_dist["Yes"], "\n")
 ```
+
+*The 80/20 split kept the data balanced. The training set has 17,414 rows, with CHD Yes and No both at 8,707.*
+
 
 ---
 
@@ -763,6 +744,12 @@ cat("\nInterpretation: Mean BMI for No CHD =", round(bmi_test$estimate[1], 2),
     "| Mean BMI for Yes CHD =", round(bmi_test$estimate[2], 2), "\n")
 ```
 
+*All of the statistical tests showed strong evidence that our predictors are related to CHD (p < 0.001), meaning the differences we observed are unlikely to be random. CHD was more common among men, smokers, people with diabetes, and individuals who had not exercised recently, which is consistent with what previous research and clinical guidelines suggest. Participants who rated their general health as fair or poor also had much higher CHD rates, indicating that overall health status is closely linked to cardiovascular risk.*
+
+*Age showed a similarly clear pattern—CHD becomes increasingly common in older age groups, reinforcing that age remains one of the most important non-modifiable risk factors. The BMI t-test also showed a significant difference between groups, suggesting that body weight and metabolic health still play a role in CHD.*
+
+*Taken together, demographic factors, lifestyle behaviors, metabolic conditions, and general health all appear to contribute to CHD risk. These results highlight the importance of promoting healthier behaviors and identifying high-risk individuals early on.*
+
 ---
 
 # Random Forest Model
@@ -808,6 +795,10 @@ rf_orig <- ranger(
 
 rf_orig
 ```
+
+*The Random Forest model was trained with 500 trees and seven predictors, using 70% of the data for each tree and a minimum node size of 5 to allow more detailed splits. With mtry = 2, the model evaluates two randomly selected predictors at each decision point. The out-of-bag Brier score was 0.162, indicating that the predicted probabilities are reasonably accurate and well-calibrated. Given a training sample of 15,238 observations, the model performs reliably without signs of heavy overfitting.*
+
+
 ---
 
 # Random Forest Model evaluation 
@@ -861,6 +852,9 @@ print(metrics_df)
 cat("AUC:", round(as.numeric(auc(roc_obj_rf)), 4), "\n")
 
 ```
+
+*Using the optimal cutoff (0.46), the random forest reached an accuracy of 0.77 and an AUC of 0.84. Sensitivity and specificity were fairly balanced, and the F1-score was around 0.75. Overall, the model performs well and captures CHD cases with good consistency.*
+
 ```{r}
 # --- ROC Curve Visualization ---
 library(ggplot2)
@@ -887,6 +881,10 @@ ggplot(var_imp, aes(x = reorder(Variable, Importance), y = Importance)) +
        x = "Variable", y = "Importance (Permutation)") +
   theme_minimal()
 ```
+
+*The ROC curve shows that the random forest separates CHD and non-CHD cases reasonably well. The curve stays far above the diagonal line, and the AUC of about 0.84 matches this pattern, meaning the model has solid overall discrimination.*
+
+*Age is clearly the strongest predictor in the model, followed by general health and diabetes status. Sex and smoking also contribute but to a smaller degree, while BMI and exercise add only limited predictive power. Overall, the importance ranking matches what we saw earlier in the statistical tests.*
 
 ---
 
@@ -941,6 +939,8 @@ tree_pruned <- prune(tree_model, cp = optimal_cp)
 cat("\n=== Pruned Decision Tree Summary ===\n")
 print(tree_pruned)
 ```
+
+*The tree first splits by age, then by general health. Older adults with poorer health are mostly classified as CHD “Yes,” while younger or healthier groups tend to fall into “No.” Diabetes and BMI appear only in a few smaller splits, so they help in specific cases but aren’t the main factors. Overall, the tree’s pattern is consistent with what we saw in the earlier results.*
 
 ## Decision Tree Visualization
 
@@ -1029,6 +1029,9 @@ cat(sprintf("Precision: %.2f%% - When tree predicts CHD, it's correct %.2f%% of 
 cat(sprintf("AUC: %.4f - Overall discriminative ability\n", metrics_tree$Value[6]))
 ```
 
+*The decision tree reached an accuracy of about 0.77, with sensitivity around 0.79 and specificity around 0.74. Precision is roughly 0.72, and the AUC is 0.82, which shows the model can separate CHD and non-CHD cases fairly well. Overall, the tree performs consistently across metrics and gives a reasonable balance between catching CHD cases and avoiding false alarms.*
+
+
 ## ROC Curve Comparison: Random Forest vs Decision Tree
 
 ```{r, fig.width=10, fig.height=6}
@@ -1050,6 +1053,9 @@ legend("bottomright",
        lwd = c(3, 3, 2),
        lty = c(1, 1, 2))
 ```
+
+*When comparing the two ROC curves, the random forest stays slightly higher than the decision tree for most of the curve. The gap isn’t big, but it shows the random forest catches a bit more true positives at the same false-positive levels. The AUC values also match this pattern: 0.837 for the random forest and 0.818 for the decision tree. So both models work well, but the random forest has a small overall advantage.*
+
 
 ## Variable Importance in Decision Tree
 
@@ -1088,6 +1094,9 @@ if(length(tree_importance) > 0) {
   cat("No variable importance available (tree may be too simple)\n")
 }
 ```
+
+*From the importance scores, age is clearly the strongest factor in the decision tree, followed by general health. Diabetes and sex show up but their impact is much smaller, and BMI, exercise, and smoking have even smaller roles. This matches what we saw earlier in the tree structure, where most of the early splits came from age and general health*
+
 
 ## Model Comparison: Random Forest vs Decision Tree
 
@@ -1134,5 +1143,37 @@ cat(sprintf("Decision Tree AUC: %.4f\n", model_comparison$Decision_Tree[6]))
 cat(sprintf("AUC Difference: %.4f\n\n", model_comparison$Difference[6]))
 
 ```
+
+*As the result, both models perform very similarly. The random forest is slightly higher on accuracy and AUC, and it also has a small edge in sensitivity. The decision tree does a bit better in precision and is very close on F1-score. Overall, the random forest has a small advantage, but the performance gap is not large, and both models handle the CHD prediction task reasonably well.*
+
+---
+
+# Conclusion
+
+This analysis examined key lifestyle and health determinants associated with coronary heart disease (CHD). The statistical results demonstrated strong and consistent relationships: elevated BMI, diabetes, and smoking habits were significantly linked to an increased likelihood of CHD. Additionally, BMI showed notable variation across self-reported health status levels, while regular physical activity was associated with healthier BMI categories. These findings underscore the critical importance of adopting and maintaining healthy lifestyle behaviors to prevent and manage coronary heart disease.
+
+In addition to the statistical tests, we also built a random forest and a decision tree model to see how well these factors predict CHD. Both models showed very similar patterns, with age, general health, and diabetes standing out as the strongest predictors. When comparing the two, the random forest performed slightly better, especially in AUC and sensitivity, but the difference was small. These results line up with the earlier findings and provide extra confirmation that the same key factors consistently drive CHD risk.
+
+## Limitations
+- Results are based on available data with some missing values
+- Cross-sectional data limits causal conclusions
+- Statistical significance doesn't always mean clinical significance
+- We balanced the CHD outcome using random sampling, which helps address the imbalance but also reduces the amount of data we can use.
+
+## Practical Implications
+
+The results help identify important risk factors for coronary heart disease and can guide
+
+- Healthcare screening programs
+- Public health interventions 
+- Individual patient care decisions to reduce CHD incidence through lifestyle modifications.
+
+## References
+
+Tsao, C. W., & Vasan, R. S. (2015). Cohort profile: The Framingham Heart Study (FHS): Overview of milestones in cardiovascular epidemiology. *International Journal of Epidemiology*, *44*(6), 1800–1813. https://doi.org/10.1093/ije/dyv337
+
+Yusuf, S., Hawken, S., Ounpuu, S., Dans, T., Avezum, A., Lanas, F., McQueen, M., Budaj, A., Pais, P., Varigos, J., Liu, L., & INTERHEART Study Investigators. (2004). Effect of potentially modifiable risk factors associated with myocardial infarction in 52 countries (the INTERHEART study): Case-control study. *The Lancet*, *364*(9438), 937–952. https://doi.org/10.1016/S0140-6736(04)17018-9
+
+
 
 ---
