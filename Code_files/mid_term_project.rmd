@@ -28,19 +28,19 @@ options(scientific = TRUE, digits = 3)
 
 # Abstract
 
-This study investigates key lifestyle and health factors associated with coronary heart disease (CHD) of people within the age of 70 using a large, population-based survey dataset. Through rigorous data cleaning, evidence-based handling of missing values, and clinically guided outlier removal, the analysis ensures robust statistical inference. Exploratory data analysis is conducted using t-tests, chi-square tests, and ANOVA to examine the roles of BMI, smoking, diabetes, exercise, and general health status. The results demonstrate strong and consistent associations, indicating that higher BMI, diabetes, and smoking are linked to an increased risk of CHD, while regular exercise and better self-reported health status are associated with a lower risk. These findings emphasize the significance of modifiable lifestyle behaviors in the prevention and management of coronary heart disease.
+This study examines lifestyle and health factors linked to coronary heart disease (CHD) in people under 70 using a large survey dataset. After data cleaning and handling missing values, we use t-tests and chi-square tests to analyze age, sex, BMI, smoking, diabetes, exercise, and health status. Results show higher age, BMI, diabetes, and smoking increase CHD risk, while exercise and better health lower it. These findings highlight the importance of healthy behaviors for CHD prevention.
 
 # Motivation for Topic Selection
 
-Coronary heart disease remains one of the leading causes of morbidity and mortality worldwide, with significant impacts on individuals, families, and healthcare systems. Our team chose this topic because understanding the factors associated with CHD is crucial for effective prevention, early detection, and management. By identifying modifiable risk factors and highlighting the importance of lifestyle choices, we aim to contribute to public health awareness and support evidence-based interventions that can reduce the burden of heart disease in our communities.
+Coronary heart disease is a major global health issue. We chose this topic to better understand risk factors for CHD and support prevention. Identifying modifiable risks and lifestyle choices can help reduce the burden of heart disease.
 
 # Prior Research and Analysis
 
-Extensive prior research has investigated the risk factors and determinants of coronary heart disease (CHD). Large-scale epidemiological studies, such as the [Framingham Heart Study](https://www.framinghamheartstudy.org/) and [INTERHEART](https://www.phri.ca/research/interheart/), have consistently identified age, sex, diabetes, smoking, obesity, physical inactivity, and poor self-reported health as major contributors to CHD risk. Meta-analyses and systematic reviews have further confirmed the strong associations between these modifiable and non-modifiable factors and the incidence of heart disease. The Behavioral Risk Factor Surveillance System (BRFSS) dataset has been widely used in public health research to monitor trends in cardiovascular risk factors and evaluate the effectiveness of interventions. Previous analyses using BRFSS and similar datasets have demonstrated that targeted lifestyle modifications - such as smoking cessation, increased physical activity, and weight management - can significantly reduce the burden of coronary heart disease at both individual and population levels. This study builds on this foundation by applying rigorous statistical methods to recent BRFSS data, aiming to clarify the relative importance of these factors in the current population.
+Prior studies, including the [Framingham Heart Study](https://www.framinghamheartstudy.org/) and [INTERHEART](https://www.phri.ca/research/interheart/), have shown that age, sex, diabetes, smoking, obesity, inactivity, and poor health are key CHD risk factors. The BRFSS dataset is widely used to track these risks and evaluate interventions. Our study uses recent BRFSS 2024 data and statistical methods to clarify the importance of these factors today.
 
 # Dataset Description
 
-This analysis utilizes data from the 2024 Behavioral Risk Factor Surveillance System (BRFSS), a nationwide health-related telephone survey conducted by the Centers for Disease Control and Prevention (CDC). The BRFSS collects information on health behaviors, chronic conditions, and preventive practices from a representative sample of adults across the United States. The 2024 dataset contains responses to over 300 variables, enabling comprehensive assessment of lifestyle, demographic, and clinical factors. For more details, the dataset is publicly available at [CDC BRFSS Annual Data 2024](https://www.cdc.gov/brfss/annual_data/annual_2024.html). This rich source of population-based data provides a robust foundation for investigating the determinants of coronary heart disease and other major health outcomes.
+We used data from the 2024 BRFSS, a national CDC survey of US adults. The dataset covers health behaviors, conditions, and demographics, with over 300 variables. More details: [CDC BRFSS Annual Data 2024](https://www.cdc.gov/brfss/annual_data/annual_2024.html).
 
 # Variables Used for Analysis
 
@@ -52,7 +52,6 @@ The following variables were selected based on clinical relevance and prior rese
 - **Smoking_Status**: Lifetime smoking status
 - **BMI_Category_Alt**: BMI category (Underweight, Normal, Overweight, Obese)
 - **Exercise_Past_30_Days**: Physical activity in the past 30 days
-- **CVD_Stroke_History**: History of cardiovascular disease or stroke
 - **Coronary_Heart_Disease**: CHD diagnosis status (outcome variable)
 - **Heart_Attack_History**: History of heart attack
 - **General_Health_Status**: Self-reported general health status
@@ -60,8 +59,7 @@ The following variables were selected based on clinical relevance and prior rese
 
 # Variable Selection Criteria
 
-These variables were chosen because they represent established risk factors or potential predictors for coronary heart disease, as supported by epidemiological studies and clinical guidelines. Including demographic (age, sex), behavioral (smoking, exercise), metabolic (BMI, diabetes), and self-reported health measures allows for a comprehensive assessment of factors influencing CHD risk. This approach ensures that the analysis captures both modifiable and non-modifiable determinants, enabling robust statistical inference and meaningful public health recommendations.
-Additionally, variable selection is also considered based on the missing percentage of each variable to ensure reliability and completeness of analysis.
+These variables are established CHD risk factors or predictors, supported by research and guidelines. We include demographic, behavioral, metabolic, and health measures for a comprehensive analysis. Variables with high missingness were excluded for reliability.
 
 ---
 
@@ -84,7 +82,7 @@ Heart_data$Diabetes_Status <- factor(Heart_data$Diabetes_Status, levels = c(1, 2
 Heart_data$Smoking_Status <- factor(Heart_data$Smoked_100_Cigarettes_Lifetime, levels = c(1, 2), labels = c("Yes", "No"))
 Heart_data$BMI_Category_Alt <- factor(Heart_data$BMI_Category_Alt, levels = c(1, 2, 3, 4), labels = c("Underweight", "Normal Weight", "Overweight", "Obese"))
 Heart_data$Exercise_Past_30_Days <- factor(Heart_data$Exercise_Past_30_Days, levels = c(1, 2), labels = c("Yes", "No"))
-Heart_data$CVD_Stroke_History <- factor(Heart_data$CVD_Stroke_History, levels = c(1, 2), labels = c("Yes", "No"))
+# Heart_data$CVD_Stroke_History <- factor(Heart_data$CVD_Stroke_History, levels = c(1, 2), labels = c("Yes", "No"))
 Heart_data$Coronary_Heart_Disease <- factor(Heart_data$Coronary_Heart_Disease, levels = c(1, 2), labels = c("Yes", "No"))
 Heart_data$Heart_Attack_History <- factor(Heart_data$Heart_Attack_History, levels = c(1, 2), labels = c("Yes", "No"))
 Heart_data$General_Health_Status <- factor(Heart_data$General_Health_Status, levels = c(1, 2, 3, 4, 5), labels = c("Excellent", "Very Good", "Good", "Fair", "Poor"))
@@ -98,7 +96,7 @@ names(Heart_data)[names(Heart_data) == "Age_Group_5yr"] <- "Age"
 # Select only the 14 key variables
 selected_vars <- c(
   "Age", "Sex", "Diabetes_Status", "Smoking_Status", "BMI_Category_Alt",
-  "Exercise_Past_30_Days", "CVD_Stroke_History", "Coronary_Heart_Disease",
+  "Exercise_Past_30_Days", "Coronary_Heart_Disease",
   "Heart_Attack_History", "General_Health_Status", "BMI_Value", "State_Code"
 )
 Heart_data <- Heart_data[, selected_vars]
@@ -200,6 +198,9 @@ if ("Age" %in% names(Heart_clean)) {
   cat(sprintf("Removed %d rows with Age above 69 years\n", rows_before - nrow(Heart_clean)))
 }
 
+# Remove Age label above 69 
+Heart_clean$Age <- factor(Heart_clean$Age)
+
 # Remove rows with missing critical variables
 critical_vars <- c("Coronary_Heart_Disease", "General_Health_Status", "Sex", "Exercise_Past_30_Days", "Diabetes_Status", "Smoking_Status", "BMI_Value", "BMI_Category_Alt", "Age")
 available_critical <- critical_vars[critical_vars %in% names(Heart_clean)]
@@ -220,45 +221,64 @@ if("BMI_Value" %in% names(Heart_clean)) {
 
 ---
 
-## CHD Distribution Balancing
+## Handling CHD Distribution Class Imbalance based on Geographic Location
 
 ```{r, results='asis'}
 if("State_Code" %in% names(Heart_clean) && "Coronary_Heart_Disease" %in% names(Heart_clean)) {
-  # Simple Random Sampling: Balance CHD classes WITHOUT matching
-  cat("\n\n### Simple Random Sampling for Class Balance:\n")
-  
-  # Separate CHD Yes and No cases
+  # For each Yes CHD case, randomly sample a No CHD case from the same State_Code
   chd_yes_cases <- Heart_clean %>% filter(Coronary_Heart_Disease == "Yes")
   chd_no_cases <- Heart_clean %>% filter(Coronary_Heart_Disease == "No")
   
-  cat(sprintf("Total CHD Yes cases: %d\n", nrow(chd_yes_cases)))
-  cat(sprintf("Total CHD No cases available: %d\n", nrow(chd_no_cases)))
-  
-  # Randomly sample No cases to match Yes cases count (simple random sampling)
   set.seed(123)  # For reproducibility
-  sampled_no_cases <- chd_no_cases %>%
-    sample_n(size = nrow(chd_yes_cases), replace = FALSE)
-  
-  # Combine to create balanced dataset
-  Heart_clean_balanced <- rbind(chd_yes_cases, sampled_no_cases)
-  
-  cat(sprintf("\n=== Balancing Results ===\n"))
-  cat(sprintf("CHD Yes cases: %d\n", nrow(chd_yes_cases)))
-  cat(sprintf("CHD No cases (randomly sampled): %d\n", nrow(sampled_no_cases)))
-  cat(sprintf("Total balanced dataset size: %d (perfectly balanced 1:1)\n", nrow(Heart_clean_balanced)))
-  
-  cat("\n**Balancing Strategy**: Simple random sampling WITHOUT matching\n")
-  cat("Allows Age and Sex to be meaningful predictors in models\n")
-  cat("Maintains statistical independence for t-tests and chi-square tests\n")
-  
-  # Update Heart_clean to use balanced dataset
+  # To prevent duplicates, keep track of used No-CHD indices
+  used_no_indices <- c()
+  sampled_no_cases_list <- vector("list", nrow(chd_yes_cases))
+  for (i in seq_len(nrow(chd_yes_cases))) {
+    state <- chd_yes_cases$State_Code[i]
+    # Get available No-CHD cases for this state, excluding already used
+    no_cases_state <- chd_no_cases %>% filter(State_Code == state)
+    if (nrow(no_cases_state) > 0) {
+      available <- setdiff(seq_len(nrow(no_cases_state)), used_no_indices)
+      # Map to global indices
+      global_indices <- which(chd_no_cases$State_Code == state)
+      available_global <- setdiff(global_indices, used_no_indices)
+      if (length(available_global) > 0) {
+        pick <- sample(available_global, 1)
+        used_no_indices <- c(used_no_indices, pick)
+        sampled_no_cases_list[[i]] <- chd_no_cases[pick, ]
+      } else {
+        # If all state No-CHD cases used, sample from all unused No-CHD
+        available_global <- setdiff(seq_len(nrow(chd_no_cases)), used_no_indices)
+        if (length(available_global) > 0) {
+          pick <- sample(available_global, 1)
+          used_no_indices <- c(used_no_indices, pick)
+          sampled_no_cases_list[[i]] <- chd_no_cases[pick, ]
+        } else {
+          stop("Not enough unique No-CHD cases to match all Yes-CHD cases.")
+        }
+      }
+    } else {
+      # If no No-CHD in state, sample from all unused No-CHD
+      available_global <- setdiff(seq_len(nrow(chd_no_cases)), used_no_indices)
+      if (length(available_global) > 0) {
+        pick <- sample(available_global, 1)
+        used_no_indices <- c(used_no_indices, pick)
+        sampled_no_cases_list[[i]] <- chd_no_cases[pick, ]
+      } else {
+        stop("Not enough unique No-CHD cases to match all Yes-CHD cases.")
+      }
+    }
+  }
+  sampled_no_cases <- bind_rows(sampled_no_cases_list)
+  Heart_clean_balanced <- bind_rows(chd_yes_cases, sampled_no_cases)
+  cat(sprintf("\nTotal CHD Yes cases: %d\n", nrow(chd_yes_cases)))
+  cat(sprintf("\nTotal CHD No cases sampled: %d\n", nrow(sampled_no_cases)))
+  cat(sprintf("\nTotal balanced dataset size: %d (matched by State_Code without duplicates)\n", nrow(Heart_clean_balanced)))
   Heart_clean <- Heart_clean_balanced
-  
-  cat(sprintf("\n✓ Heart_clean dataset updated with random sampling approach\n"))
-  cat(sprintf("Perfect 50/50 balance achieved: %d Yes cases, %d No cases\n", 
+  cat(sprintf("\nHeart_clean dataset updated with state-matched random sampling (no duplicates)\n"))
+  cat(sprintf("\nPerfect 50/50 balance achieved: %d Yes cases, %d No cases\n", 
               sum(Heart_clean$Coronary_Heart_Disease == "Yes"),
               sum(Heart_clean$Coronary_Heart_Disease == "No")))
-  cat("\n**Key Advantage for Modeling**: Age and Sex can now contribute to predictions!\n")
 }
 ```
 
@@ -279,8 +299,6 @@ cat(sprintf("Final cleaned dataset size: %d rows\n", rows_final))
 ---
 
 # Data Visualizations
-
-
 
 ## Diabetes Status Distribution
 ```{r, results='asis'}
@@ -336,82 +354,56 @@ ggplot(na.omit(Heart_clean), aes(x = BMI_Value)) +
 
 *BMI is right-skewed, concentrated in the 20–40 range.*
 
-## Sex vs Coronary Heart Disease Distribution
+## Sex Distribution
 ```{r}
-# Create a grouped bar plot for Sex vs CHD
-ggplot(Heart_clean, aes(x = Sex, fill = Coronary_Heart_Disease)) +
-  geom_bar(position = "dodge") +
+# Bar plot for overall sex distribution in the dataset
+ggplot(Heart_clean, aes(x = Sex, fill = Sex)) +
+  geom_bar(show.legend = FALSE) +
   labs(
-    title = "Sex Distribution by Coronary Heart Disease Status",
+    title = "Sex Distribution in the Dataset",
     x = "Sex",
-    y = "Count",
-    fill = "CHD Status"
+    y = "Count"
   ) +
-  scale_fill_manual(values = c("Yes" = "#e74c3c", "No" = "#2ecc71")) +
+  scale_fill_manual(values = c("Male" = "#619CFF", "Female" = "#F8766D")) +
   theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    legend.position = "top"
-  )
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
 # Print counts and proportions
-sex_chd_table <- table(Heart_clean$Sex, Heart_clean$Coronary_Heart_Disease)
-cat("\n=== Sex vs CHD Counts ===\n")
-print(sex_chd_table)
-
-cat("\n=== CHD Rate by Sex (Row Percentages) ===\n")
-sex_chd_prop <- prop.table(sex_chd_table, margin = 1) * 100
-print(round(sex_chd_prop, 2))
-
-cat("\n=== Sex Distribution within CHD Groups (Column Percentages) ===\n")
-chd_sex_prop <- prop.table(sex_chd_table, margin = 2) * 100
-print(round(chd_sex_prop, 2))
+sex_table <- table(Heart_clean$Sex)
+cat("\n=== Sex Distribution (Counts) ===\n")
+print(sex_table)
+cat("\n=== Sex Distribution (Percentages) ===\n")
+sex_prop <- prop.table(sex_table) * 100
+print(round(sex_prop, 2))
 ```
 
-*With random sampling (no matching), we can observe natural sex distribution differences between CHD groups. Males show higher CHD prevalence, while the overall sex ratio is no longer artificially balanced 1:1 as it was with the matched case-control design. This allows Sex to function as a meaningful predictor in our models.*
+*The plot and table show the overall male/female distribution in the cleaned dataset. Percentages reflect the study population after cleaning and balancing.*
 
-## Age vs Coronary Heart Disease Distribution
-```{r, fig.width=12, fig.height=6}
-# Create a grouped bar plot for Age vs CHD
-ggplot(Heart_clean, aes(x = Age, fill = Coronary_Heart_Disease)) +
-  geom_bar(position = "dodge") +
+## Age Distribution
+```{r, fig.width=10, fig.height=6}
+# Bar plot for overall age group distribution in the dataset
+ggplot(Heart_clean, aes(x = Age, fill = Age)) +
+  geom_bar(show.legend = FALSE) +
   labs(
-    title = "Age Distribution by Coronary Heart Disease Status",
+    title = "Age Group Distribution in the Dataset",
     x = "Age Group",
-    y = "Count",
-    fill = "CHD Status"
+    y = "Count"
   ) +
-  scale_fill_manual(values = c("Yes" = "#e74c3c", "No" = "#2ecc71")) +
+  scale_fill_brewer(palette = "Set3") +
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold"),
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    legend.position = "top"
+    axis.text.x = element_text(angle = 45, hjust = 1)
   )
 
 # Print counts and proportions
-age_chd_table <- table(Heart_clean$Age, Heart_clean$Coronary_Heart_Disease)
-cat("\n=== Age vs CHD Counts ===\n")
-print(age_chd_table)
-
-cat("\n=== CHD Rate by Age Group (Row Percentages) ===\n")
-age_chd_prop <- prop.table(age_chd_table, margin = 1) * 100
-print(round(age_chd_prop, 2))
-
-cat("\n=== Age Distribution within CHD Groups (Column Percentages) ===\n")
-chd_age_prop <- prop.table(age_chd_table, margin = 2) * 100
-print(round(chd_age_prop, 2))
-
-# Calculate and display mean age effect
-cat("\n=== Key Finding: Age-CHD Relationship ===\n")
-cat("Notice how CHD prevalence increases dramatically with age:\n")
-for(age_group in levels(Heart_clean$Age)) {
-  chd_rate <- age_chd_prop[age_group, "Yes"]
-  cat(sprintf("  %s: %.1f%% CHD rate\n", age_group, chd_rate))
-}
+age_table <- table(Heart_clean$Age)
+cat("\n=== Age Group Distribution (Percentages) ===\n")
+age_prop <- prop.table(age_table) * 100
+print(round(age_prop, 2))
 ```
 
-*With random sampling, we observe the natural age-CHD gradient: older age groups (50-69) have dramatically higher CHD rates compared to younger groups (18-49). This critical pattern was completely masked in the matched case-control design where age distributions were forced to be identical. The decision tree now correctly identifies Age 50-69 as the primary risk factor, enabling accurate predictions.*
+*The plot and table show the age group distribution in the cleaned dataset. Older age groups are more represented, which may relate to higher CHD risk.*
 
 ---
 
@@ -445,8 +437,7 @@ if(t_test_bmi$p.value < 0.05) {
 }
 ```
 
-*The t-test shows a very strong difference in BMI between people with and without coronary heart disease (p < 2e-16). This means it is almost impossible that the result happened by chance, suggesting that individuals with coronary heart disease tend to have higher BMI on average.
-Although the boxplot shows similar BMI distributions between the two groups, the t-test result (p < 0.05) indicates a significant difference. This may be due to the large sample size detecting small mean differences.*
+*The t-test shows a strong difference in BMI between people with and without CHD (p < 2e-16). Individuals with CHD tend to have higher BMI on average.*
 
 
 ---
@@ -482,84 +473,11 @@ if(chi_test_smoking$p.value < 0.05) {
 }
 ```
 
-*The chi-squared test shows a very strong relationship between smoking status and coronary heart disease (p < 2e-16). This means it is almost impossible that the result happened by chance, suggesting that smokers are much more likely to have coronary heart disease than non-smokers.
-We can clearly see from the chart that people who smoke have a higher proportion of coronary heart disease compared to those who do not smoke.*
+*The chi-squared test shows a strong relationship between smoking and CHD (p < 2e-16). Smokers are more likely to have CHD than non-smokers.*
 
 ---
 
-## Q3: Does BMI vary significantly across different general health status levels?
-
-**Rationale:**
-
-- We want to compare the mean BMI across more than two independent groups (different general health status levels). ANOVA is appropriate for comparing means across multiple groups.
-
-**Hypothesis:**
-
-- Null Hypothesis (H0): The mean BMI is the same across all general health status groups.
-- Alternative Hypothesis (H1): At least one general health status group has a different mean BMI.
-
-**Statistical Test:** ANOVA (comparing means across multiple groups)
-
-```{r}
-aggregate(BMI_Value ~ General_Health_Status, data = Heart_clean, 
-          FUN = function(x) c(mean = mean(x, na.rm = TRUE), sd = sd(x, na.rm = TRUE), count = length(x[!is.na(x)])))
-boxplot(BMI_Value ~ General_Health_Status, data = Heart_clean,
-        main = "BMI by General Health Status",
-        xlab = "General Health Status", ylab = "BMI",
-        las = 2,
-        col = c("darkgreen", "lightgreen", "yellow", "orange", "red"))
-anova_bmi_health <- aov(BMI_Value ~ General_Health_Status, data = Heart_clean)
-anova_summary <- summary(anova_bmi_health)
-print(anova_summary)
-p_value_anova <- anova_summary[[1]][["Pr(>F)"]][1]
-if(p_value_anova < 0.05) {
-  cat("Result: BMI does vary significantly across general health status levels (p < 0.05)")
-} else {
-  cat("Result: BMI does not vary significantly across general health status levels (p >= 0.05)")
-}
-```
-
-*The ANOVA test shows a very strong difference in BMI across different general health status levels (p < 2e-16). This means it is almost impossible that the result happened by chance, suggesting that BMI varies significantly depending on an individual’s reported health condition.
-From the chart, we can also observe that people with poorer health tend to have higher BMI values, while those with better health tend to have lower BMI values.*
-
----
-
-## Q4: Does exercise participation vary significantly across different BMI categories, suggesting a role in weight management?
-
-**Rationale:**
-
-- We are testing the association between two categorical variables (BMI category and exercise participation). The chi-square test of independence is suitable.
-
-**Hypothesis:**
-
-- Null hypothesis (H0): Exercise participation and BMI category are independent (no association).
-- Alternative hypothesis (H1): Exercise participation and BMI category are associated (not independent).
-
-**Method**: Chi-square test of independence
-```{r}
-bmi_exercise_table <- table(Heart_clean$BMI_Category_Alt, Heart_clean$Exercise_Past_30_Days, useNA = "no")
-print(bmi_exercise_table)
-exercise_rates_by_bmi <- prop.table(bmi_exercise_table, margin=1) * 100
-print(round(exercise_rates_by_bmi, 2))
-chi_test_bmi_exercise <- chisq.test(bmi_exercise_table)
-print(chi_test_bmi_exercise)
-bmi_exercise_df <- as.data.frame(bmi_exercise_table)
-colnames(bmi_exercise_df) <- c("BMI_Category", "Exercise", "Count")
-ggplot(bmi_exercise_df, aes(x = BMI_Category, y = Count, fill = Exercise)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Exercise Participation by BMI Category",
-       subtitle = "Exploring the Exercise-Weight Management Connection",
-       x = "BMI Category", y = "Count", fill = "Exercise Past 30 Days") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-*The chi-squared test shows a very strong relationship between past-30-day exercise participation and BMI category (p < 2e-16). This means it is almost impossible that the result happened by chance. People who reported exercising in the past 30 days tend to fall into lower BMI categories, while those who did not exercise are more likely to be in higher BMI groups. This pattern suggests that regular physical activity plays an important role in weight management and maintaining a healthier BMI.
-From the chart, we can also observe that people who are underweight or obese have a noticeably lower rate of exercise in the past 30 days compared to those with a moderate BMI.*
-
----
-
-## Q5: Is diabetes status associated with coronary heart disease?
+## Q3: Is diabetes status associated with coronary heart disease?
 
 **Rationale:**
 
@@ -591,39 +509,176 @@ if(chi_test_diabetes$p.value < 0.05) {
 }
 ```
 
-*The chi-squared test shows a very strong relationship between diabetes status and coronary heart disease (p < 2e-16). This means it is almost impossible that the result happened by chance. People with diabetes or prediabetes have a much higher likelihood of developing coronary heart disease compared to those without diabetes, suggesting that poor blood sugar control is closely linked to increased heart disease risk.
-Moreover, we can see from the chart that individuals with diabetes have a noticeably higher proportion of coronary heart disease compared to others.*
+*The chi-squared test shows a strong relationship between diabetes and CHD (p < 2e-16). People with diabetes have a much higher chance of CHD.*
 
 ---
 
-# Conclusion
+## Q4: Is exercise participation associated with coronary heart disease?
 
-This analysis examined key lifestyle and health determinants associated with coronary heart disease (CHD). The statistical results demonstrated strong and consistent relationships: elevated BMI, diabetes, and smoking habits were significantly linked to an increased likelihood of CHD. Additionally, BMI showed notable variation across self-reported health status levels, while regular physical activity was associated with healthier BMI categories. These findings underscore the critical importance of adopting and maintaining healthy lifestyle behaviors to prevent and manage coronary heart disease.
+**Rationale:**
 
-## Limitations
-- Results are based on available data with some missing values
-- Cross-sectional data limits causal conclusions
-- Statistical significance doesn't always mean clinical significance
+- We are testing the association between two categorical variables (exercise participation and CHD). The chi-square test of independence is suitable.
 
-## Practical Implications
+**Hypothesis:**
 
-The results help identify important risk factors for coronary heart disease and can guide
+- Null hypothesis (H0): Exercise participation and coronary heart disease are independent (no association).
+- Alternative hypothesis (H1): Exercise participation and coronary heart disease are associated (not independent).
 
-- Healthcare screening programs
-- Public health interventions 
-- Individual patient care decisions to reduce CHD incidence through lifestyle modifications.
+**Statistical Test:** Chi-square test (testing association between two categorical variables)
 
-## References
+```{r}
+exercise_chd_table <- table(Heart_clean$Exercise_Past_30_Days, Heart_clean$Coronary_Heart_Disease)
+print(exercise_chd_table)
+prop_exercise_chd <- prop.table(exercise_chd_table, margin = 1) * 100
+print(round(prop_exercise_chd, 1))
+barplot(exercise_chd_table, beside = TRUE,
+        main = "Exercise Participation and Coronary Heart Disease",
+        xlab = "Coronary Heart Disease", ylab = "Count",
+        col = c("#6a5acd", "#ffb347"),
+        legend = TRUE)
+chi_test_exercise <- chisq.test(exercise_chd_table)
+print(chi_test_exercise)
+if(chi_test_exercise$p.value < 0.05) {
+  cat("Result: There is a significant association between exercise participation and coronary heart disease (p < 0.05)")
+} else {
+  cat("Result: There is no significant association between exercise participation and coronary heart disease (p >= 0.05)")
+}
+```
 
-Tsao, C. W., & Vasan, R. S. (2015). Cohort profile: The Framingham Heart Study (FHS): Overview of milestones in cardiovascular epidemiology. *International Journal of Epidemiology*, *44*(6), 1800–1813. https://doi.org/10.1093/ije/dyv337
+*The chi-squared test shows exercise participation is associated with CHD. People who exercise may have a different CHD risk than those who do not.*
 
-Yusuf, S., Hawken, S., Ounpuu, S., Dans, T., Avezum, A., Lanas, F., McQueen, M., Budaj, A., Pais, P., Varigos, J., Liu, L., & INTERHEART Study Investigators. (2004). Effect of potentially modifiable risk factors associated with myocardial infarction in 52 countries (the INTERHEART study): Case-control study. *The Lancet*, *364*(9438), 937–952. https://doi.org/10.1016/S0140-6736(04)17018-9
+---
+
+## Q5: Is general health status associated with coronary heart disease?
+
+**Rationale:**
+
+- We are testing the association between two categorical variables (general health status and CHD). The chi-square test of independence is suitable for this purpose.
+
+**Hypothesis:**
+
+- Null hypothesis (H0): General health status and coronary heart disease are independent (no association).
+- Alternative hypothesis (H1): General health status and coronary heart disease are associated.
+
+**Statistical Test:** Chi-square test (testing association between two categorical variables)
+
+```{r}
+gh_chd_table <- table(Heart_clean$General_Health_Status, Heart_clean$Coronary_Heart_Disease)
+print(gh_chd_table)
+prop_gh_chd <- prop.table(gh_chd_table, margin = 1) * 100
+print(round(prop_gh_chd, 1))
+barplot(t(gh_chd_table), beside = TRUE,
+        main = "General Health Status and Coronary Heart Disease",
+        xlab = "General Health Status", ylab = "Count",
+        col = c("#2ecc71", "#e74c3c"),
+        legend = colnames(gh_chd_table))
+chi_test_gh <- chisq.test(gh_chd_table)
+print(chi_test_gh)
+if(chi_test_gh$p.value < 0.05) {
+  cat("Result: There is a significant association between general health status and coronary heart disease (p < 0.05)")
+} else {
+  cat("Result: There is no significant association between general health status and coronary heart disease (p >= 0.05)")
+}
+```
+
+*The chi-squared test shows general health status is associated with CHD. People reporting poorer health have a higher CHD risk.*
+
+---
+
+## Q6: Is age group associated with coronary heart disease?
+
+**Rationale:**
+
+- We are testing the association between two categorical variables (age group and CHD). The chi-square test of independence is suitable for this purpose.
+
+**Hypothesis:**
+
+- Null hypothesis (H0): Age group and coronary heart disease are independent (no association).
+- Alternative hypothesis (H1): Age group and coronary heart disease are associated.
+
+**Statistical Test:** Chi-square test (testing association between two categorical variables)
+
+```{r}
+age_chd_table <- table(Heart_clean$Age, Heart_clean$Coronary_Heart_Disease)
+print(age_chd_table)
+prop_age_chd <- prop.table(age_chd_table, margin = 1) * 100
+print(round(prop_age_chd, 1))
+# barplot(t(age_chd_table), beside = TRUE,
+#         main = "Age Group and Coronary Heart Disease",
+#         xlab = "Age Group", ylab = "Count",
+#         col = c("#2ecc71", "#e74c3c"),
+#         legend = colnames(age_chd_table))
+
+# Create a grouped bar plot for Age vs CHD
+ggplot(Heart_clean, aes(x = Age, fill = Coronary_Heart_Disease)) +
+  geom_bar(position = "dodge") +
+  labs(
+    title = "Age Distribution by Coronary Heart Disease Status",
+    x = "Age Group",
+    y = "Count",
+    fill = "CHD Status"
+  ) +
+  scale_fill_manual(values = c("Yes" = "#e74c3c", "No" = "#2ecc71")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "top"
+  )
 
 
-## New Smart Question 
-# How do Age, Sex, Smoking_Status, Diabetes_Status, Exercise_Past_30_Days, and General_Health_Status affect the likelihood of having Coronary_Heart_Disease?
+chi_test_age <- chisq.test(age_chd_table)
+print(chi_test_age)
+if(chi_test_age$p.value < 0.05) {
+  cat("Result: There is a significant association between age group and coronary heart disease (p < 0.05)")
+} else {
+  cat("Result: There is no significant association between age group and coronary heart disease (p >= 0.05)")
+}
+```
+*Older age groups (50-69) have much higher CHD rates than younger groups. The chi-squared test confirms age group is associated with CHD.*
 
-# Exploratory Data Analysis
+
+---
+
+## Q7: Is sex associated with coronary heart disease?
+
+**Rationale:**
+
+- We are testing the association between two categorical variables (sex and CHD). The chi-square test of independence is suitable.
+
+**Hypothesis:**
+
+- Null hypothesis (H0): Sex and coronary heart disease are independent (no association).
+- Alternative hypothesis (H1): Sex and coronary heart disease are associated (not independent).
+
+**Statistical Test:** Chi-square test (testing association between two categorical variables)
+
+```{r}
+sex_chd_table <- table(Heart_clean$Sex, Heart_clean$Coronary_Heart_Disease)
+print(sex_chd_table)
+prop_sex_chd <- prop.table(sex_chd_table, margin = 1) * 100
+print(round(prop_sex_chd, 1))
+barplot(t(sex_chd_table), beside = TRUE,
+        main = "Sex and Coronary Heart Disease",
+        xlab = "Sex", ylab = "Count",
+        col = c("#2ecc71", "#e74c3c"),
+        legend = colnames(sex_chd_table))
+chi_test_sex <- chisq.test(sex_chd_table)
+print(chi_test_sex)
+if(chi_test_sex$p.value < 0.05) {
+  cat("Result: There is a significant association between sex and coronary heart disease (p < 0.05)")
+} else {
+  cat("Result: There is no significant association between sex and coronary heart disease (p >= 0.05)")
+}
+```
+
+*The chi-squared test shows sex is associated with CHD (p < 0.05). Males have a higher proportion of CHD than females.*
+
+---
+
+# Model Building and Training for CHD Prediction
+
+## Final Data Overview and Class Distribution
 ```{r}
 # Display summary statistics for key variables
 summary(Heart_clean[, c("Coronary_Heart_Disease", "Age", "Sex", "Smoking_Status", 
@@ -638,7 +693,7 @@ cat("Imbalance ratio (No:Yes):", round(chd_distribution["No"]/chd_distribution["
 
 ---
 
-# Data Splitting and Preparation
+## Data Splitting and Preparation
 
 ```{r}
 library(caret)
@@ -666,102 +721,7 @@ cat("Overall CHD Yes count in training data:", train_class_dist["Yes"], "\n")
 
 ---
 
-# Predictor Selection and Justification
-
-## Statistical Tests for Predictor Selection
-
-**Rationale:**  
-Before building the Random Forest model, we perform statistical tests to justify the selection of predictors. For categorical variables, we use chi-square tests to assess their association with coronary heart disease. For continuous variables (Age groups treated as ordinal, BMI_Value), we use t-tests or Mann-Whitney U tests to compare distributions between CHD groups.
-
-```{r}
-library(dplyr)
-library(kableExtra)
-
-# === Tests for Categorical Predictors ===
-cat("=== Chi-Square Tests for Categorical Predictors ===\n\n")
-
-categorical_predictors <- c("Sex", "Smoking_Status", "Diabetes_Status", 
-                            "Exercise_Past_30_Days", "General_Health_Status")
-
-chi_results <- data.frame(
-  Predictor = character(),
-  Chi_Square = numeric(),
-  P_Value = character(),
-  Significant = character(),
-  stringsAsFactors = FALSE
-)
-
-for(pred in categorical_predictors) {
-  test_table <- table(Heart_clean[[pred]], Heart_clean$Coronary_Heart_Disease)
-  chi_test <- chisq.test(test_table)
-  
-  chi_results <- rbind(chi_results, data.frame(
-    Predictor = pred,
-    Chi_Square = round(chi_test$statistic, 2),
-    P_Value = ifelse(chi_test$p.value < 0.001, "< 0.001", 
-                     sprintf("%.4f", chi_test$p.value)),
-    Significant = ifelse(chi_test$p.value < 0.05, "Yes ***", "No"),
-    stringsAsFactors = FALSE
-  ))
-}
-
-kable(chi_results, 
-      caption = "Chi-Square Test Results: Categorical Predictors vs CHD",
-      align = 'c') %>%
-  kable_styling(bootstrap_options = c("striped", "bordered", "hover"), 
-                full_width = FALSE)
-
-# === Test for Age (Ordinal/Categorical) ===
-cat("\n=== Chi-Square Test for Age Groups ===\n\n")
-
-age_table <- table(Heart_clean$Age, Heart_clean$Coronary_Heart_Disease)
-age_chi_test <- chisq.test(age_table)
-
-age_result <- data.frame(
-  Predictor = "Age",
-  Chi_Square = round(as.numeric(age_chi_test$statistic), 2),
-  P_Value = ifelse(age_chi_test$p.value < 0.001, "< 0.001", 
-                   sprintf("%.4f", age_chi_test$p.value)),
-  Significant = ifelse(age_chi_test$p.value < 0.05, "Yes ***", "No"),
-  stringsAsFactors = FALSE
-)
-
-kable(age_result,
-      caption = "Chi-Square Test: Age Groups vs CHD",
-      align = 'c',
-      row.names = FALSE) %>%
-  kable_styling(bootstrap_options = c("striped", "bordered", "hover"), 
-                full_width = FALSE)
-
-# === Test for BMI_Value (Continuous) ===
-cat("\n=== T-Test for BMI_Value (Continuous Variable) ===\n\n")
-
-bmi_test <- t.test(BMI_Value ~ Coronary_Heart_Disease, data = Heart_clean)
-
-bmi_result <- data.frame(
-  Predictor = "BMI_Value",
-  Test = "Independent T-Test",
-  T_Statistic = round(bmi_test$statistic, 3),
-  P_Value = ifelse(bmi_test$p.value < 0.001, "< 0.001", 
-                   sprintf("%.4f", bmi_test$p.value)),
-  Mean_No_CHD = round(bmi_test$estimate[1], 2),
-  Mean_Yes_CHD = round(bmi_test$estimate[2], 2),
-  Significant = ifelse(bmi_test$p.value < 0.05, "Yes ***", "No")
-)
-
-kable(bmi_result,
-      caption = "T-Test: BMI_Value vs CHD",
-      align = 'c') %>%
-  kable_styling(bootstrap_options = c("striped", "bordered", "hover"), 
-                full_width = FALSE)
-
-cat("\nInterpretation: Mean BMI for No CHD =", round(bmi_test$estimate[1], 2),
-    "| Mean BMI for Yes CHD =", round(bmi_test$estimate[2], 2), "\n")
-```
-
----
-
-# Random Forest Model
+## Random Forest Model Training
 ```{r}
 library(dplyr)
 library(caret)
@@ -806,7 +766,7 @@ rf_orig
 ```
 ---
 
-# Random Forest Model evaluation 
+## Random Forest Model evaluation 
 ```{r}
 # Predict probabilities (extract "Yes" column)
 pred_prob_orig <- predict(rf_orig, data = test_rf)$predictions[, "Yes"]
@@ -830,17 +790,7 @@ TN <- conf_opt$table[1,1]
 FP <- conf_opt$table[1,2]
 FN <- conf_opt$table[2,1]
 
-
-
-# accuracy <- (TP + TN) / (TP + TN + FP + FN)
-# precision <- ifelse((TP + FP) == 0, NA, TP / (TP + FP))
-# recall_sensitivity <- ifelse((TP + FN) == 0, NA, TP / (TP + FN))
-# specificity <- ifelse((TN + FP) == 0, NA, TN / (TN + FP))
-# f1_score <- ifelse((TP + FP) == 0 | (TP + FN) == 0, NA, 
-#                    2 * (precision * recall_sensitivity) / (precision + recall_sensitivity))
-
-
-
+# Calculate additional metrics
 metrics_df <- data.frame(
   Metric = c("Accuracy", "Precision", "Recall", "F1-score", "Specificity"),
   Value  = round(c(
@@ -858,16 +808,6 @@ cat("AUC:", round(as.numeric(auc(roc_obj_rf)), 4), "\n")
 
 ```
 ```{r}
-# --- ROC Curve Visualization ---
-library(ggplot2)
-
-# Plot ROC curve
-
-# Plot ROC curve with custom axis labels
-plot(roc_obj_rf, col = "#1c61b6", lwd = 3, main = "Random Forest ROC Curve",
-  xlab = "False Positive Rate", ylab = "True Positive Rate")
-abline(a = 0, b = 1, lty = 2, col = "gray")
-
 # --- Variable Importance Plot ---
 # Extract and prepare importance
 var_imp <- as.data.frame(rf_orig$variable.importance)
@@ -886,12 +826,7 @@ ggplot(var_imp, aes(x = reorder(Variable, Importance), y = Importance)) +
 
 ---
 
-# Decision Tree Model
-
-## Model Training
-
-**Rationale:**  
-Decision Trees provide an interpretable, rule-based approach to classification. Unlike Random Forest's "black box" ensemble, CART models generate explicit decision rules that clinicians can easily understand and apply. This is particularly valuable in healthcare settings where model interpretability is crucial for adoption and trust.
+## Categorical Tree Model Training
 
 ```{r}
 library(rpart)
@@ -899,8 +834,6 @@ library(rpart.plot)
 library(caret)
 
 # Use the same train/test split as Random Forest (already created above)
-# Variables: Coronary_Heart_Disease, Age, Sex, Smoking_Status, Diabetes_Status, 
-#            Exercise_Past_30_Days, General_Health_Status, BMI_Value
 
 # Train Decision Tree with complexity parameter tuning
 set.seed(123)
@@ -956,12 +889,6 @@ rpart.plot(
   tweak = 1.2            # Scale text size
 )
 
-# Add interpretation legend
-cat("\n=== How to Read the Tree ===\n")
-cat("- Each node shows: prediction, probability of Yes, percentage of total observations\n")
-cat("- Color coding: Green = predict No CHD, Red = predict Yes CHD\n")
-cat("- Follow paths from top to bottom based on variable conditions\n")
-cat("- Terminal nodes (leaves) show final predictions\n")
 ```
 
 ## Decision Tree Performance Evaluation
@@ -1014,37 +941,6 @@ kable(metrics_tree,
       align = 'c') %>% 
   kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
 
-# Clinical interpretation
-cat("\n--- Clinical Interpretation (Decision Tree) ---\n")
-cat(sprintf("Sensitivity: %.2f%% - Tree correctly identifies %.2f%% of actual CHD cases\n", 
-            metrics_tree$Value[3] * 100, metrics_tree$Value[3] * 100))
-cat(sprintf("Specificity: %.2f%% - Tree correctly identifies %.2f%% of non-CHD cases\n", 
-            metrics_tree$Value[4] * 100, metrics_tree$Value[4] * 100))
-cat(sprintf("Precision: %.2f%% - When tree predicts CHD, it's correct %.2f%% of the time\n", 
-            metrics_tree$Value[2] * 100, metrics_tree$Value[2] * 100))
-cat(sprintf("AUC: %.4f - Overall discriminative ability\n", metrics_tree$Value[6]))
-```
-
-## ROC Curve Comparison: Random Forest vs Decision Tree
-
-```{r, fig.width=10, fig.height=6}
-# Create ROC curves for both models
-roc_rf <- pROC::roc(test_rf$Coronary_Heart_Disease, pred_prob_orig)
-roc_tree <- pROC::roc(test_rf$Coronary_Heart_Disease, tree_pred_prob)
-
-# Plot comparison
-plot(roc_rf, col = "#1c61b6", lwd = 3, main = "ROC Curve Comparison: Random Forest vs Decision Tree",
-     xlab = "False Positive Rate (1 - Specificity)", 
-     ylab = "True Positive Rate (Sensitivity)")
-plot(roc_tree, col = "#e74c3c", lwd = 3, add = TRUE)
-abline(a = 0, b = 1, lty = 2, col = "gray")
-legend("bottomright", 
-       legend = c(paste0("Random Forest (AUC = ", round(pROC::auc(roc_rf), 3), ")"),
-                  paste0("Decision Tree (AUC = ", round(pROC::auc(roc_tree), 3), ")"),
-                  "Random Classifier"),
-       col = c("#1c61b6", "#e74c3c", "gray"),
-       lwd = c(3, 3, 2),
-       lty = c(1, 1, 2))
 ```
 
 ## Variable Importance in Decision Tree
@@ -1085,6 +981,28 @@ if(length(tree_importance) > 0) {
 }
 ```
 
+## ROC Curve Comparison: Random Forest vs Decision Tree
+
+```{r, fig.width=10, fig.height=6}
+# Create ROC curves for both models
+roc_rf <- pROC::roc(test_rf$Coronary_Heart_Disease, pred_prob_orig)
+roc_tree <- pROC::roc(test_rf$Coronary_Heart_Disease, tree_pred_prob)
+
+# Plot comparison
+plot(roc_rf, col = "#1c61b6", lwd = 3, main = "ROC Curve Comparison: Random Forest vs Decision Tree",
+     xlab = "False Positive Rate (1 - Specificity)", 
+     ylab = "True Positive Rate (Sensitivity)")
+plot(roc_tree, col = "#e74c3c", lwd = 3, add = TRUE)
+abline(a = 0, b = 1, lty = 2, col = "gray")
+legend("bottomright", 
+       legend = c(paste0("Random Forest (AUC = ", round(pROC::auc(roc_rf), 3), ")"),
+                  paste0("Decision Tree (AUC = ", round(pROC::auc(roc_tree), 3), ")"),
+                  "Random Classifier"),
+       col = c("#1c61b6", "#e74c3c", "gray"),
+       lwd = c(3, 3, 2),
+       lty = c(1, 1, 2))
+```
+
 ## Model Comparison: Random Forest vs Decision Tree
 
 ```{r, results='asis'}
@@ -1123,12 +1041,26 @@ kable(model_comparison[, c("Metric", "RF_Pct", "DT_Pct", "Diff_Pct")],
       row.names = FALSE) %>%
   kable_styling(bootstrap_options = c("striped", "bordered", "hover"), full_width = FALSE)
 
-# Interpretation
-cat("\n=== Model Comparison Interpretation ===\n")
-cat(sprintf("Random Forest AUC: %.4f\n", model_comparison$Random_Forest[6]))
-cat(sprintf("Decision Tree AUC: %.4f\n", model_comparison$Decision_Tree[6]))
-cat(sprintf("AUC Difference: %.4f\n\n", model_comparison$Difference[6]))
-
 ```
-
 ---
+
+# Conclusion
+
+
+This analysis found that age, sex, high BMI, diabetes, and smoking are strongly linked to higher CHD risk. Regular physical activity is also associated with CHD. These results highlight the importance of healthy lifestyle choices for CHD prevention.
+
+A supervised AI web application has been developed and hosted in GitHub to predict CHD risk using the above decision tree model trained on the BRFSS 2024 dataset. This interactive tool leverages supervised machine learning to estimate individual CHD risk based on user input. Try the CHD risk prediction demo here: [https://dhanushgwu1995.github.io/6101-mid-term-project/predict](https://dhanushgwu1995.github.io/6101-mid-term-project/predict)
+
+## Limitations
+- Results are based on available data with some missing values
+- Cross-sectional data limits causal conclusions
+
+## Practical Implications
+These results help identify key CHD risk factors and can guide screening, public health interventions, and patient care to reduce CHD through lifestyle changes.
+
+## References
+
+Tsao, C. W., & Vasan, R. S. (2015). Cohort profile: The Framingham Heart Study (FHS): Overview of milestones in cardiovascular epidemiology. *International Journal of Epidemiology*, *44*(6), 1800–1813. https://doi.org/10.1093/ije/dyv337
+
+Yusuf, S., Hawken, S., Ounpuu, S., Dans, T., Avezum, A., Lanas, F., McQueen, M., Budaj, A., Pais, P., Varigos, J., Liu, L., & INTERHEART Study Investigators. (2004). Effect of potentially modifiable risk factors associated with myocardial infarction in 52 countries (the INTERHEART study): Case-control study. *The Lancet*, *364*(9438), 937–952. https://doi.org/10.1016/S0140-6736(04)17018-9
+

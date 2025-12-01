@@ -8,5 +8,5 @@ export interface DecisionTreeNode {
 }
 
 export interface DecisionTree {
-    rules: DecisionTreeNode[];
+    children: DecisionTreeNode[];
 }
