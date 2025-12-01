@@ -39,7 +39,7 @@ export class DecisionTreePredictionService {
    * Traverse the decision tree to find the prediction
    */
   private traverseDecisionTree(patientData: PatientData): PredictionResult {
-    const rules = decisionTreeRules.rules;
+  const rules = decisionTreeRules.children;
     
     for (const rule of rules) {
       const result = this.evaluateNode(rule, patientData);

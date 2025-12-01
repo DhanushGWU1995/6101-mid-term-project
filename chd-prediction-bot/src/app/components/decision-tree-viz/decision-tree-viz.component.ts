@@ -11,6 +11,6 @@ export class DecisionTreeVizComponent {
   treeRules: DecisionTreeNode[];
 
   constructor() {
-    this.treeRules = decisionTreeRules.rules;
+  this.treeRules = decisionTreeRules.children;
   }
 }
