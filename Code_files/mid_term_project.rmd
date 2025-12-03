@@ -3,7 +3,7 @@ title: "Unveiling the factors significantly associated with coronary heart disea
 author: |
   Team Confusion Matrix Mafia:
   
-  Dhanush Mathivanan, Heng Jui Chu, Nikhilesh Dhavale, Adithya Karande
+  Dhanush Mathivanan, Heng Jui Chu, Nikhilesh Dhavale, Aditya Karande
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -702,8 +702,8 @@ library(rpart.plot)
 
 set.seed(123)  # For reproducibility
 
-# Create stratified train/test split (80/20)
-train_index <- createDataPartition(Heart_clean$Coronary_Heart_Disease, p = 0.8, list = FALSE)
+# Create stratified train/test split (70/30)
+train_index <- createDataPartition(Heart_clean$Coronary_Heart_Disease, p = 0.7, list = FALSE)
 train_data <- Heart_clean[train_index, ]
 test_data <- Heart_clean[-train_index, ]
 
@@ -991,9 +991,13 @@ roc_tree <- pROC::roc(test_rf$Coronary_Heart_Disease, tree_pred_prob)
 # Plot comparison
 plot(roc_rf, col = "#1c61b6", lwd = 3, main = "ROC Curve Comparison: Random Forest vs Decision Tree",
      xlab = "False Positive Rate (1 - Specificity)", 
-     ylab = "True Positive Rate (Sensitivity)")
+     ylab = "True Positive Rate (Sensitivity)",
+     identity = FALSE)  # Don't plot default diagonal line
 plot(roc_tree, col = "#e74c3c", lwd = 3, add = TRUE)
-abline(a = 0, b = 1, lty = 2, col = "gray")
+
+# Add diagonal reference line from (1,0) to (0,1) since x-axis goes from 1 to 0
+segments(x0 = 1, y0 = 0, x1 = 0, y1 = 1, lty = 2, col = "gray", lwd = 2)
+
 legend("bottomright", 
        legend = c(paste0("Random Forest (AUC = ", round(pROC::auc(roc_rf), 3), ")"),
                   paste0("Decision Tree (AUC = ", round(pROC::auc(roc_tree), 3), ")"),
