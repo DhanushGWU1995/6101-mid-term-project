@@ -984,20 +984,30 @@ if(length(tree_importance) > 0) {
 ## ROC Curve Comparison: Random Forest vs Decision Tree
 
 ```{r, fig.width=10, fig.height=6}
-# Create ROC curves for both models
-roc_rf <- pROC::roc(test_rf$Coronary_Heart_Disease, pred_prob_orig)
-roc_tree <- pROC::roc(test_rf$Coronary_Heart_Disease, tree_pred_prob)
+# Create ROC objects for both models
+roc_rf <- pROC::roc(test_rf$Coronary_Heart_Disease, pred_prob_orig, 
+                    direction = "<", levels = c("No", "Yes"))
+roc_tree <- pROC::roc(test_rf$Coronary_Heart_Disease, tree_pred_prob,
+                      direction = "<", levels = c("No", "Yes"))
 
-# Plot comparison
-plot(roc_rf, col = "#1c61b6", lwd = 3, main = "ROC Curve Comparison: Random Forest vs Decision Tree",
-     xlab = "False Positive Rate (1 - Specificity)", 
-     ylab = "True Positive Rate (Sensitivity)",
-     identity = FALSE)  # Don't plot default diagonal line
+# Plot Random Forest ROC curve
+plot(roc_rf, col = "#1c61b6", lwd = 3, 
+     main = "ROC Curve Comparison: Random Forest vs Decision Tree",
+     xlab = "Specificity", 
+     ylab = "Sensitivity",
+     legacy.axes = FALSE,  # Medical format: Specificity 1 to 0, Sensitivity 0 to 1
+     xlim = c(1, 0),  # X-axis goes from 1 (left) to 0 (right) very few false positives to many false positives
+     ylim = c(0, 1), # Y-axis goes from 0 (bottom) to 1 (top) very few true positives to many true positives
+     identity = FALSE,
+     print.auc = FALSE) 
+
+# Add Decision Tree ROC curve
 plot(roc_tree, col = "#e74c3c", lwd = 3, add = TRUE)
 
-# Add diagonal reference line from (1,0) to (0,1) since x-axis goes from 1 to 0
+# Add diagonal reference line (random classifier)
 segments(x0 = 1, y0 = 0, x1 = 0, y1 = 1, lty = 2, col = "gray", lwd = 2)
 
+# Add legend with AUC values
 legend("bottomright", 
        legend = c(paste0("Random Forest (AUC = ", round(pROC::auc(roc_rf), 3), ")"),
                   paste0("Decision Tree (AUC = ", round(pROC::auc(roc_tree), 3), ")"),
