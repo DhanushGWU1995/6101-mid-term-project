@@ -407,7 +407,7 @@ print(round(age_prop, 2))
 
 ---
 
-# Data Analysis
+# Exploratory Data Analysis
 
 ## Q1: Is there a significant difference in BMI between people with and without coronary heart disease?
 
@@ -764,6 +764,12 @@ rf_orig <- ranger(
 
 rf_orig
 ```
+**Random Forest Model Summary**
+
+*The random forest model was trained using 500 trees, with 2 variables tried at each split (mtry), and a minimum node size of 5 to allow for finer splits given the small dataset size. The model uses permutation importance for interpretability and samples 70% of the training data for each tree to enhance robustness.*
+
+*The out-of-bag Brier score is 0.167. This is the mean squared error of the predicted probabilities vs. actual outcomes (lower is better; 0 is perfect, 0.25 is random guessing for balanced classes).*
+
 ---
 
 ## Random Forest Model evaluation 
@@ -853,8 +859,8 @@ tree_model <- rpart(
 )
 
 # Print tree summary
-cat("=== Decision Tree Model Summary ===\n")
-print(tree_model)
+# cat("=== Decision Tree Model Summary ===\n")
+# print(tree_model)
 
 # Display complexity parameter table
 cat("\n=== Complexity Parameter Table ===\n")
@@ -864,12 +870,19 @@ printcp(tree_model)
 optimal_cp <- tree_model$cptable[which.min(tree_model$cptable[,"xerror"]),"CP"]
 cat(sprintf("\nOptimal Complexity Parameter (CP): %.5f\n", optimal_cp))
 
+```
+
+*The optimal Complexity Parameter of 0.00105 is a cost-complexity pruning metric selected via 10-fold cross-validation that balances tree complexity with accuracy, preventing overfitting to training noise while improving generalization to new patients and enhancing interpretability with clinical decision rules doctors can easily follow, this value represents the sweet spot between underfitting (CP too high 0.1) and overfitting (CP too low 0.0001), ensuring that when the tree is pruned, only the most meaningful and predictive splits are retained, transforming a complex full tree into a robust, interpretable model suitable for real-world CHD risk assessment.*
+
+```{r}
 # Prune tree to optimal CP
 tree_pruned <- prune(tree_model, cp = optimal_cp)
 
-cat("\n=== Pruned Decision Tree Summary ===\n")
-print(tree_pruned)
+# cat("\n=== Pruned Decision Tree Summary ===\n")
+# print(tree_pruned)
 ```
+
+---
 
 ## Decision Tree Visualization
 
@@ -890,6 +903,8 @@ rpart.plot(
 )
 
 ```
+
+---
 
 ## Decision Tree Performance Evaluation
 
@@ -943,6 +958,8 @@ kable(metrics_tree,
 
 ```
 
+---
+
 ## Variable Importance in Decision Tree
 
 ```{r, results='asis', fig.width=10, fig.height=6}
@@ -969,8 +986,7 @@ if(length(tree_importance) > 0) {
     theme(plot.title = element_text(hjust = 0.5, face = "bold"),
           plot.subtitle = element_text(hjust = 0.5))
   
-  # Print importance table (remove print() for proper HTML rendering)
-  cat("\n=== Decision Tree Variable Importance ===\n")
+  # Print importance table
   kable(tree_var_imp, 
         caption = "Variables Ranked by Importance in Decision Tree",
         align = 'c',
@@ -980,6 +996,8 @@ if(length(tree_importance) > 0) {
   cat("No variable importance available (tree may be too simple)\n")
 }
 ```
+
+---
 
 ## ROC Curve Comparison: Random Forest vs Decision Tree
 
@@ -1016,6 +1034,8 @@ legend("bottomright",
        lwd = c(3, 3, 2),
        lty = c(1, 1, 2))
 ```
+
+---
 
 ## Model Comparison: Random Forest vs Decision Tree
 
